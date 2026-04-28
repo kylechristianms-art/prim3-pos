@@ -78,7 +78,16 @@ def checkout():
 @orders_bp.route("/orders/complete_sale", methods=["POST"])
 @login_required
 def complete_sale():
-    return jsonify({"success": True})
+    try:
+        data = request.get_json() or {}
+        sale_id = data.get("sale_id")
+        if sale_id:
+            sale = db.session.get(Sale, sale_id)
+            if sale:
+                log_action(current_user.id, "COMPLETE_SALE", f"Sale #{sale.id}")
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": True})  # always succeed so UI can reset
 
 
 # ── Void a direct Sale record ──────────────────────────────────────
@@ -95,8 +104,9 @@ def void_sale():
     return jsonify({"success": True})
 
 
-# ── List all saved orders ──────────────────────────────────────────
+# ── List all saved orders (TWO URL aliases) ────────────────────────
 @orders_bp.route("/saved_orders")
+@orders_bp.route("/orders/saved")
 @login_required
 def saved_orders():
     orders = SavedOrder.query.order_by(SavedOrder.created_at.desc()).all()
@@ -209,16 +219,14 @@ def verify_pin():
 @orders_bp.route("/saved_orders/clear", methods=["POST"])
 @login_required
 def clear_orders():
-    from datetime import timedelta
-
-    cutoff = datetime.utcnow() - timedelta(days=1)
+    # Get ALL completed or voided orders (removed the 24-hour cutoff that was
+    # preventing the button from working when orders were recent)
     orders_to_clear = SavedOrder.query.filter(
-        ((SavedOrder.is_completed == True) | (SavedOrder.is_void == True)),
-        SavedOrder.created_at < cutoff,
+        (SavedOrder.is_completed == True) | (SavedOrder.is_void == True)
     ).all()
 
     if not orders_to_clear:
-        return jsonify({"success": True, "message": "No old orders to clear.", "deleted": 0})
+        return jsonify({"success": True, "message": "No completed or voided orders to clear.", "deleted": 0})
 
     # ── Build CSV ─────────────────────────────────────────────────
     output = io.StringIO()
@@ -267,7 +275,7 @@ def clear_orders():
 
     return jsonify({
         "success":      True,
-        "message":      f"Exported and cleared {deleted_count} old order(s).",
+        "message":      f"Exported and cleared {deleted_count} order(s).",
         "deleted":      deleted_count,
         "download_url": f"/static/exports/{filename}",
     })

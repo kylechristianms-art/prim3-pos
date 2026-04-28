@@ -888,7 +888,7 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             allAddons = data.addons || [];
-            // track which categories have at least one add-on (for filter)
+            // track which MAIN category IDs have at least one add-on
             _addonCatIds = new Set(
                 allAddons
                     .filter(function(a) { return a.category_id; })
@@ -1181,55 +1181,11 @@ function applyProductFilters() {
         var nameOk  = name.includes(search);
         var catOk   = !catVal || cat === catVal;
         var stockOk = _pStock === 'all' || status === _pStock;
+        // Add-on filter: check the MAIN category (addons are assigned to main cats)
+        var mainCat = cat ? _getMainCatId(cat) : null;
         var addonOk = _pAddon === 'all' ||
-                      (_pAddon === 'yes' && cat && _addonCatIds.has(cat)) ||
-                      (_pAddon === 'no'  && (!cat || !_addonCatIds.has(cat)));
-
-        row.style.display = (nameOk && catOk && stockOk && addonOk) ? '' : 'none';
-    });
-
-    // ── Sort (only visible rows) ──────────────────────────────
-    var tbody   = document.getElementById('tableBody');
-    var visible = rows.filter(function (r) { return r.style.display !== 'none'; });
-
-    visible.sort(function (a, b) {
-        switch (_pSort) {
-            case 'az':         return (a.getAttribute('data-name')  || '').localeCompare(b.getAttribute('data-name') || '');
-            case 'za':         return (b.getAttribute('data-name')  || '').localeCompare(a.getAttribute('data-name') || '');
-            case 'price-asc':  return parseFloat(a.getAttribute('data-price') || 0) - parseFloat(b.getAttribute('data-price') || 0);
-            case 'price-desc': return parseFloat(b.getAttribute('data-price') || 0) - parseFloat(a.getAttribute('data-price') || 0);
-            case 'stock-asc':  return parseInt(a.getAttribute('data-qty') || 0) - parseInt(b.getAttribute('data-qty') || 0);
-            case 'stock-desc': return parseInt(b.getAttribute('data-qty') || 0) - parseInt(a.getAttribute('data-qty') || 0);
-            default:           return 0;
-        }
-    });
-
-    visible.forEach(function (r) { tbody.appendChild(r); });
-}
-
-// ── Product filter / sort state ───────────────────────────────────
-var _pSort      = 'default';
-var _pStock     = 'all';
-var _pAddon     = 'all';
-var _addonCatIds = new Set();   // populated after loadAddons()
-
-function applyProductFilters() {
-    var search  = (document.querySelector('.search-bar') || {value: ''}).value.toLowerCase();
-    var catVal  = (document.getElementById('catFilterSelect') || {value: ''}).value;
-    var rows    = Array.from(document.querySelectorAll('#tableBody tr'));
-
-    // ── Filter ──────────────────────────────────────────────────
-    rows.forEach(function (row) {
-        var name   = row.getAttribute('data-name') || '';
-        var cat    = row.getAttribute('data-cat')  || '';
-        var status = row.getAttribute('data-status') || '';
-
-        var nameOk  = name.includes(search);
-        var catOk   = !catVal || cat === catVal;
-        var stockOk = _pStock === 'all' || status === _pStock;
-        var addonOk = _pAddon === 'all' ||
-                      (_pAddon === 'yes' && cat && _addonCatIds.has(cat)) ||
-                      (_pAddon === 'no'  && (!cat || !_addonCatIds.has(cat)));
+                      (_pAddon === 'yes' && mainCat && _addonCatIds.has(mainCat)) ||
+                      (_pAddon === 'no'  && (!mainCat || !_addonCatIds.has(mainCat)));
 
         row.style.display = (nameOk && catOk && stockOk && addonOk) ? '' : 'none';
     });
@@ -1275,55 +1231,41 @@ function setAddonFilter(val, btn) {
     applyProductFilters();
 }
 
-// ── Populate category dropdown for the filter bar ─────────────────
+// ── Populate category filter dropdown (no arrows) ─────────────────
 function populateCatFilterDropdown() {
     var sel = document.getElementById('catFilterSelect');
     if (!sel) return;
-    // preserve current value
     var cur = sel.value;
     sel.innerHTML = '<option value="">All Categories</option>';
-    allCategories.forEach(function (c) {
+    // Build parent→children map
+    var parentMap = {};
+    allCategories.filter(function(c) { return !c.parent_id; }).forEach(function(c) { parentMap[c.id] = []; });
+    allCategories.filter(function(c) { return !!c.parent_id; }).forEach(function(c) {
+        if (parentMap[c.parent_id]) parentMap[c.parent_id].push(c);
+    });
+    // Render parents then their children indented
+    allCategories.filter(function(c) { return !c.parent_id; }).forEach(function(c) {
         var opt = document.createElement('option');
         opt.value = String(c.id);
-        opt.textContent = (c.parent_id ? '  └ ' : '') + c.name;
+        opt.textContent = c.name;
         sel.appendChild(opt);
+        (parentMap[c.id] || []).forEach(function(sub) {
+            var subOpt = document.createElement('option');
+            subOpt.value = String(sub.id);
+            subOpt.textContent = '\u00a0\u00a0\u00a0' + sub.name;
+            sel.appendChild(subOpt);
+        });
     });
     sel.value = cur;
 }
 
-function setSort(val, btn) {
-    _pSort = val;
-    document.querySelectorAll('[data-sort]').forEach(function (b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-    applyProductFilters();
-}
-function setStockFilter(val, btn) {
-    _pStock = val;
-    document.querySelectorAll('[data-stock]').forEach(function (b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-    applyProductFilters();
-}
-function setAddonFilter(val, btn) {
-    _pAddon = val;
-    document.querySelectorAll('[data-addon]').forEach(function (b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-    applyProductFilters();
-}
-
-// ── Populate category dropdown for the filter bar ─────────────────
-function populateCatFilterDropdown() {
-    var sel = document.getElementById('catFilterSelect');
-    if (!sel) return;
-    // preserve current value
-    var cur = sel.value;
-    sel.innerHTML = '<option value="">All Categories</option>';
-    allCategories.forEach(function (c) {
-        var opt = document.createElement('option');
-        opt.value = String(c.id);
-        opt.textContent = (c.parent_id ? '  └ ' : '') + c.name;
-        sel.appendChild(opt);
-    });
-    sel.value = cur;
+// ── Fix addon filter: "Has Add-Ons" matches products whose MAIN category
+//    (or the main cat of their sub-category) has add-ons ──────────────
+function _getMainCatId(catId) {
+    // If catId belongs to a sub-category, return its parent id; otherwise return catId itself
+    var cat = allCategories.find(function(c) { return String(c.id) === String(catId); });
+    if (!cat) return null;
+    return cat.parent_id ? String(cat.parent_id) : String(cat.id);
 }
 
     function escHtml(str) {

@@ -1,0 +1,3 @@
+ID,Label,Subtotal,Discount,Total,Payment,Type,Status,Created At,Void Reason,Void Resolution
+1,wer,477.00,0.00,477.00,card,dine_in,VOIDED,2026-04-28 09:04,asdfb,
+2,Sale #13,159.00,0.00,159.00,card,dine_in,COMPLETED,2026-04-28 09:07,,

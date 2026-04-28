@@ -20,6 +20,8 @@ class Category(db.Model):
     name = db.Column(db.String(100), nullable=False)
     color = db.Column(db.String(20), nullable=True, default="#f5c518")
     parent_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=True)
+    # Relationships
+    parent = db.relationship("Category", remote_side=[id], backref="children", foreign_keys=[parent_id])
 
 
 class SavedPrinter(db.Model):
@@ -38,6 +40,8 @@ class Product(db.Model):
     quantity = db.Column(db.Integer, default=0)
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=True)
     photo = db.Column(db.String(200), nullable=True)
+    # Relationship to category (enables product.category and product.category.parent)
+    category = db.relationship("Category", foreign_keys=[category_id])
 
 
 class Addon(db.Model):

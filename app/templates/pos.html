@@ -867,7 +867,7 @@
     });
 
     function preloadSavedOrder(orderId) {
-        fetch('/orders/saved')
+        fetch('/saved_orders', {cache:'no-store'})
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (!data.success) return;
@@ -969,21 +969,16 @@
 
         var subs = _CAT_CHILDREN[catId] || [];
         if (subs.length > 0) {
-            // "All [main]" sub-button
-            var allSubBtn = document.createElement('button');
-            allSubBtn.className = 'category-btn sub-btn selected';
-            allSubBtn.textContent = '✦ All';
-            allSubBtn.onclick = function () {
-                subRow.querySelectorAll('.category-btn').forEach(function (b) { b.classList.remove('selected'); });
-                allSubBtn.classList.add('selected');
-                selectedCategory = String(catId);
-                filterProducts();
-            };
-            subRow.appendChild(allSubBtn);
-
+            // No "All" button — show only sub-categories directly
+            // Auto-select the first sub so the row always has one active item
+            var firstSelected = false;
             subs.forEach(function (sub) {
                 var subBtn = document.createElement('button');
-                subBtn.className = 'category-btn sub-btn';
+                subBtn.className = 'category-btn sub-btn' + (!firstSelected ? ' selected' : '');
+                if (!firstSelected) {
+                    selectedCategory = String(sub.id);
+                    firstSelected = true;
+                }
                 subBtn.textContent = sub.name;
                 subBtn.onclick = function () {
                     subRow.querySelectorAll('.category-btn').forEach(function (b) { b.classList.remove('selected'); });
@@ -1006,12 +1001,13 @@
             var catId     = btn.getAttribute('data-category') || '';
             var catMatch;
             if (selectedCategory === null) {
+                // "All" top-level selected
                 catMatch = true;
             } else if (_expandedMainCat !== null && selectedCategory === String(_expandedMainCat)) {
-                // Main cat selected → show products in this cat AND all its sub-cats
-                catMatch = catId === String(_expandedMainCat) ||
-                           String(_CAT_PARENTS[parseInt(catId)] || '') === String(_expandedMainCat);
+                // Main cat selected with no subs — show products in this main cat
+                catMatch = catId === String(_expandedMainCat);
             } else {
+                // A specific sub-category is selected
                 catMatch = catId === String(selectedCategory);
             }
             btn.style.display = (nameMatch && catMatch) ? 'block' : 'none';
@@ -1301,15 +1297,53 @@
 
     function completeSale() {
         if (!lastSaleData || !lastSaleData.sale_id) { newSale(); return; }
+
+        // Step 1: log the sale completion
         fetch('/orders/complete_sale', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sale_id: lastSaleData.sale_id }) })
         .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (!data.success) console.warn('complete_sale endpoint error:', data.error);
-            if (editingOrderId) { return fetch('/orders/saved/complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editingOrderId }) }); }
+        .then(function() {
+            if (editingOrderId) {
+                // Editing an existing saved order — just mark it completed
+                return fetch('/orders/saved/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: editingOrderId })
+                }).then(function(r) { return r.json(); });
+            } else {
+                // Direct POS sale (no saved order) — create one and immediately complete it
+                // so it shows up in "Completed Transactions" on the Orders page
+                var cartToSave = cart.map(function(i) {
+                    return { id: i.id, name: i.name, price: i.price, qty: i.qty,
+                             discount: i.discount || 0, pwdDiscount: i.pwdDiscount || false,
+                             notes: i.notes || '', addons: i.addons || [], categoryId: i.categoryId || '' };
+                });
+                var t = calcTotals();
+                return fetch('/orders/saved/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        label: 'Sale #' + lastSaleData.sale_id,
+                        cart: cartToSave,
+                        discount_amount: t.totalDisc,
+                        payment_method: lastSaleData.payment_method,
+                        kitchen_notes: document.getElementById('kitchenNotes').value.trim(),
+                        order_type: selectedOrderType
+                    })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(saved) {
+                    if (saved.success && saved.id) {
+                        return fetch('/orders/saved/complete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: saved.id })
+                        }).then(function(r) { return r.json(); });
+                    }
+                });
+            }
         })
-        .then(function(r) { if (r) return r.json(); })
         .then(function() { newSale(); })
-        .catch(function(err) { console.warn('complete_sale network error:', err); newSale(); });
+        .catch(function(err) { console.warn('completeSale error:', err); newSale(); });
     }
 
     function newSale() {
