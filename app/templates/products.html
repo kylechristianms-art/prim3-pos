@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>prim3-POS | Products</title>
+    <style>
+        /* ── Product Filter Bar ── */
+.filter-bar-row {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 16px; margin-bottom: 16px;
+    transition: background .25s, border-color .25s;
+}
+.filter-group { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.filter-label {
+    font-size: 10px; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 1px; white-space: nowrap; margin-right: 2px;
+}
+.filter-btn {
+    padding: 5px 11px; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 6px; color: var(--text-muted); font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.filter-btn:hover { border-color: var(--text-dim); color: var(--text); }
+.filter-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+.filter-btn.active-green { background: var(--green); color: #000; border-color: var(--green); }
+.filter-select-sm {
+    padding: 5px 10px; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 6px; color: var(--text); font-size: 11px; outline: none; cursor: pointer;
+    transition: background .25s;
+}
+.filter-select-sm:focus { border-color: var(--accent); }
+.filter-divider { width: 1px; height: 22px; background: var(--border); align-self: center; }
+        :root,[data-theme="dark"]{
+            --bg:#0d0d0d;--surface:#1e1e1e;--surface2:#2a2a2a;--surface3:#161616;
+            --border:#2a2a2a;--border2:#333;--text:#fff;--text-muted:#888;--text-dim:#555;
+            --accent:#f5c518;--accent-h:#e6b800;--green:#4ecca3;--red:#cc3333;--blue:#64b5f6;
+            --input-bg:#2a2a2a;--row-hover:#2a2a2a;--shadow:0 4px 24px rgba(0,0,0,.5);
+            --stock-ok-bg:#0d1f17;--stock-ok-text:#4ecca3;
+            --stock-low-bg:#1f1a00;--stock-low-text:#f5c518;
+            --stock-out-bg:#1f0d0d;--stock-out-text:#cc3333;
+        }
+        [data-theme="light"]{
+            --bg:#f0f2f5;--surface:#fff;--surface2:#f5f5f5;--surface3:#ebebeb;
+            --border:#e0e0e0;--border2:#d0d0d0;--text:#111;--text-muted:#666;--text-dim:#aaa;
+            --accent:#d4a017;--accent-h:#b8880f;--green:#1a9c72;--red:#b02020;--blue:#1976d2;
+            --input-bg:#f5f5f5;--row-hover:#f5f5f5;--shadow:0 4px 24px rgba(0,0,0,.08);
+            --stock-ok-bg:#d4f5ec;--stock-ok-text:#1a9c72;
+            --stock-low-bg:#fff8e0;--stock-low-text:#b8880f;
+            --stock-out-bg:#fff0f0;--stock-out-text:#b02020;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            font-family: Arial, sans-serif;
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            transition: background .25s, color .25s;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 240px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 0;
+            position: fixed;
+            height: 100vh;
+            transition: background .25s, border-color .25s;
+        }
+        .sidebar-logo {
+            font-size: 24px; font-weight: 900; color: var(--accent);
+            padding: 0 24px 24px; border-bottom: 1px solid var(--border); letter-spacing: 2px;
+        }
+        .sidebar-logo span { color: var(--text); }
+        .sidebar-nav { flex: 1; padding: 16px 0; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 24px; color: var(--text-muted); text-decoration: none; font-size: 14px;
+            transition: all 0.2s; border-left: 3px solid transparent;
+        }
+        .nav-item:hover { color: var(--text); background: var(--surface2); }
+        .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--surface2); }
+        .nav-icon { font-size: 18px; }
+        .sidebar-footer { padding: 16px 24px; border-top: 1px solid var(--border); }
+        .user-info { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+        .user-info strong { color: var(--text); display: block; font-size: 14px; }
+        .btn-logout {
+            display: block; width: 100%; padding: 10px;
+            background: var(--surface2); color: var(--red); border: 1px solid var(--red);
+            border-radius: 8px; text-align: center; text-decoration: none;
+            font-size: 13px; font-weight: 700; transition: all 0.2s;
+        }
+        .btn-logout:hover { background: var(--red); color: white; }
+
+        /* ── Theme toggle in sidebar ── */
+        .theme-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .theme-label-text { font-size: 12px; color: var(--text-muted); }
+        .theme-toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+        .theme-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .theme-toggle-track {
+            position: absolute; inset: 0; border-radius: 12px; cursor: pointer;
+            background: var(--surface2); border: 1px solid var(--border);
+            transition: background .25s, border-color .25s;
+        }
+        .theme-toggle input:checked + .theme-toggle-track { background: var(--accent); border-color: var(--accent); }
+        .theme-toggle-thumb {
+            position: absolute; top: 3px; left: 3px;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: var(--text-muted); font-size: 9px;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform .25s, background .25s; pointer-events: none;
+        }
+        .theme-toggle input:checked ~ .theme-toggle-thumb { transform: translateX(20px); background: #0d0d0d; }
+
+        /* ── Main ── */
+        .main { margin-left: 240px; flex: 1; padding: 32px; }
+        .page-header {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 24px;
+        }
+        .page-title { font-size: 24px; font-weight: 700; }
+        .page-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .btn-add {
+            padding: 12px 24px; background: var(--accent); color: #000;
+            border: none; border-radius: 8px; font-size: 14px; font-weight: 700;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .btn-add:hover { background: var(--accent-h); }
+        .btn-add-category {
+            padding: 12px 20px; background: var(--surface2); color: var(--green);
+            border: 1px solid var(--green); border-radius: 8px; font-size: 14px; font-weight: 700;
+            cursor: pointer; transition: all 0.2s;
+        }
+        [data-theme="dark"] .btn-add-category:hover { background: #0d1f17; }
+        [data-theme="light"] .btn-add-category:hover { background: #e8faf5; }
+
+        .search-bar {
+            width: 100%; padding: 10px 16px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text); font-size: 14px; outline: none; margin-bottom: 16px;
+            transition: border-color .2s, background .25s;
+        }
+        .search-bar:focus { border-color: var(--accent); }
+        .search-bar::placeholder { color: var(--text-dim); }
+
+        /* ── Table ── */
+        .table-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; overflow: hidden;
+            transition: background .25s, border-color .25s;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            padding: 14px 20px; text-align: left; font-size: 11px; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 1px;
+            border-bottom: 1px solid var(--border); background: var(--surface3);
+            transition: background .25s;
+        }
+        td {
+            padding: 14px 20px; font-size: 14px;
+            border-bottom: 1px solid var(--surface3); vertical-align: middle;
+            transition: background .25s;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--row-hover); }
+        .product-thumb {
+            width: 40px; height: 40px; border-radius: 6px;
+            object-fit: cover; background: var(--surface2);
+            border: 1px solid var(--border2);
+        }
+
+        /* ── Stock badges ── */
+        .stock-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .stock-ok  { background: var(--stock-ok-bg);  color: var(--stock-ok-text); }
+        .stock-low { background: var(--stock-low-bg); color: var(--stock-low-text); }
+        .stock-out { background: var(--stock-out-bg); color: var(--stock-out-text); }
+
+        /* ── Action buttons ── */
+        .action-btns { display: flex; gap: 8px; }
+        .btn-edit {
+            padding: 6px 14px; background: var(--surface2); color: var(--accent); border: 1px solid var(--accent);
+            border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-edit:hover { background: var(--accent); color: #000; }
+        .btn-delete {
+            padding: 6px 14px; background: var(--surface2); color: var(--red); border: 1px solid var(--red);
+            border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-delete:hover { background: var(--red); color: white; }
+        .btn-void {
+            padding: 6px 14px; background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border2);
+            border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-void:hover { color: var(--red); border-color: var(--red); background: var(--stock-out-bg); }
+
+        .empty-state { padding: 60px; text-align: center; color: var(--text-dim); font-size: 14px; }
+        .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+        /* ── Alerts ── */
+        .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; }
+        .alert-success {
+            background: var(--stock-ok-bg); border: 1px solid var(--green);
+            color: var(--green); display: block;
+        }
+        .alert-error {
+            background: var(--stock-out-bg); border: 1px solid var(--red);
+            color: var(--red); display: block;
+        }
+
+        /* ── Section divider ── */
+        .section-divider {
+            margin: 36px 0 16px; font-size: 18px; font-weight: 700;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        /* ── Categories tree ── */
+        .categories-tree { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .category-group { display: flex; flex-direction: column; gap: 6px; }
+        .category-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+            padding: 14px 18px; display: flex; justify-content: space-between;
+            align-items: center; transition: border-color 0.2s, background .25s; cursor: pointer;
+            user-select: none;
+        }
+        .category-card:hover { border-color: var(--border2); }
+        .category-card-toggle { font-size: 11px; color: var(--text-dim); transition: transform 0.2s; margin-right: 8px; }
+        .category-card.open .category-card-toggle { transform: rotate(180deg); }
+        .sub-category-list { display: none; flex-direction: column; gap: 6px; margin-left: 24px; }
+        .sub-category-list.open { display: flex; }
+        .sub-category-card {
+            background: var(--surface3); border: 1px solid var(--border); border-radius: 8px;
+            padding: 10px 18px 10px 36px; display: flex; justify-content: space-between;
+            align-items: center; transition: border-color 0.2s, background .25s;
+            border-left: 2px solid var(--border2);
+        }
+        .sub-category-card:hover { border-color: var(--border2); }
+        .category-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; margin-right: 8px; flex-shrink: 0; }
+        .category-name { font-size: 14px; font-weight: 700; display: flex; align-items: center; }
+        .sub-category-name { font-size: 13px; font-weight: 600; display: flex; align-items: center; color: var(--text-muted); }
+        .category-actions { display: flex; gap: 6px; align-items: center; }
+        .btn-add-sub {
+            padding: 4px 10px; background: transparent; color: var(--green); border: 1px solid var(--green);
+            border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.2s;
+        }
+        [data-theme="dark"] .btn-add-sub:hover { background: #0d1f17; }
+        [data-theme="light"] .btn-add-sub:hover { background: #e8faf5; }
+        .btn-delete-cat {
+            padding: 4px 10px; background: transparent; color: var(--text-dim); border: 1px solid var(--border2);
+            border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-delete-cat:hover { color: var(--red); border-color: var(--red); }
+
+        /* ── Add-ons ── */
+        .addons-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .btn-add-addon-main {
+            padding: 8px 16px; background: var(--surface2); color: var(--accent);
+            border: 1px solid var(--accent); border-radius: 8px; font-size: 13px; font-weight: 700;
+            cursor: pointer; transition: all 0.2s;
+        }
+        [data-theme="dark"] .btn-add-addon-main:hover { background: #2a1f00; }
+        [data-theme="light"] .btn-add-addon-main:hover { background: #fff8e0; }
+        .addon-group { margin-bottom: 14px; }
+        .addon-group-header {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; font-weight: 700; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 6px; padding: 0 4px;
+            cursor: pointer; user-select: none;
+        }
+        .addon-group-header .caret { font-size: 9px; transition: transform 0.2s; }
+        .addon-group-header.collapsed .caret { transform: rotate(-90deg); }
+        .addon-group-list { display: flex; flex-direction: column; gap: 5px; }
+        .addon-group-list.collapsed { display: none; }
+        .addon-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+            padding: 10px 16px; display: flex; justify-content: space-between;
+            align-items: center; transition: border-color 0.2s, background .25s;
+        }
+        .addon-card:hover { border-color: var(--border2); }
+        .addon-card-name { font-size: 13px; font-weight: 600; }
+        .addon-card-price { font-size: 13px; color: var(--accent); font-weight: 700; margin-left: auto; margin-right: 12px; }
+        .btn-delete-addon {
+            padding: 3px 9px; background: transparent; color: var(--text-dim); border: 1px solid var(--border2);
+            border-radius: 5px; font-size: 11px; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-delete-addon:hover { color: var(--red); border-color: var(--red); }
+
+        /* ── MODAL base ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.8); z-index: 100;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.visible { display: flex; }
+        .modal {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 32px; width: 100%; max-width: 460px;
+            max-height: 90vh; overflow-y: auto;
+            transition: background .25s, border-color .25s;
+        }
+        .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 24px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block; font-size: 12px; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+        }
+        .form-input {
+            width: 100%; padding: 12px 16px;
+            background: var(--input-bg); border: 1px solid var(--border2);
+            border-radius: 8px; color: var(--text); font-size: 14px; outline: none;
+            transition: border-color 0.2s, background .25s;
+        }
+        .form-input:focus { border-color: var(--accent); }
+        .form-select {
+            width: 100%; padding: 12px 16px;
+            background: var(--input-bg); border: 1px solid var(--border2);
+            border-radius: 8px; color: var(--text); font-size: 14px; outline: none;
+            transition: background .25s;
+        }
+        .form-select:focus { border-color: var(--accent); }
+
+        /* ── Photo Upload ── */
+        .photo-upload-area {
+            width: 100%; border: 2px dashed var(--border2); border-radius: 8px;
+            padding: 16px; text-align: center; cursor: pointer;
+            transition: border-color 0.2s, background .25s; position: relative; background: var(--surface2);
+        }
+        .photo-upload-area:hover { border-color: var(--accent); }
+        .photo-upload-area input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .photo-preview-wrap { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+        .photo-preview {
+            width: 64px; height: 64px; border-radius: 8px;
+            object-fit: cover; border: 1px solid var(--border2); background: var(--surface);
+            flex-shrink: 0;
+        }
+        .photo-upload-label { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+        .photo-upload-label strong { color: var(--accent); }
+
+        .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+        .btn-save {
+            flex: 1; padding: 12px; background: var(--accent); color: #000;
+            border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+            transition: background .2s;
+        }
+        .btn-save:hover { background: var(--accent-h); }
+        .btn-cancel {
+            flex: 1; padding: 12px; background: var(--surface2); color: var(--text-muted);
+            border: 1px solid var(--border2); border-radius: 8px; font-size: 14px; font-weight: 700;
+            cursor: pointer; transition: color .2s, border-color .2s;
+        }
+        .btn-cancel:hover { color: var(--text); border-color: var(--text-dim); }
+
+        /* ── Category modal ── */
+        .cat-modal {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 32px; width: 100%; max-width: 400px;
+            transition: background .25s, border-color .25s;
+        }
+        .color-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .swatch {
+            width: 28px; height: 28px; border-radius: 6px; cursor: pointer;
+            border: 2px solid transparent; transition: border-color 0.15s;
+        }
+        .swatch.selected { border-color: var(--text); }
+        .parent-note { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+        /* ── Addon modal ── */
+        .addon-modal {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 32px; width: 100%; max-width: 400px;
+            transition: background .25s, border-color .25s;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-logo">prim3<span>-POS</span></div>
+    <nav class="sidebar-nav">
+        <a href="/dashboard" class="nav-item" target="_self"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="/pos"       class="nav-item" target="_self"><span class="nav-icon">🛒</span> POS</a>
+        <a href="/orders"    class="nav-item" target="_self"><span class="nav-icon">📋</span> Orders</a>
+        {% if current_user.role in ['admin', 'manager'] %}
+        <a href="/products"  class="nav-item active" target="_self"><span class="nav-icon">📦</span> Products</a>
+        <a href="/reports"   class="nav-item" target="_self"><span class="nav-icon">📈</span> Reports</a>
+        <a href="/users"     class="nav-item" target="_self"><span class="nav-icon">👥</span> Users</a>
+        {% endif %}
+    </nav>
+    <div class="sidebar-footer">
+        <div class="theme-row">
+            <span class="theme-label-text" id="themeLabel">🌙 Dark</span>
+            <label class="theme-toggle">
+                <input type="checkbox" id="themeToggle" onchange="toggleTheme(this)"/>
+                <div class="theme-toggle-track"></div>
+                <div class="theme-toggle-thumb" id="themeIcon">🌙</div>
+            </label>
+        </div>
+        <div class="user-info">
+            <strong>{{ current_user.name }}</strong>
+            {{ current_user.role | capitalize }}
+        </div>
+        <a href="/logout" class="btn-logout" target="_self">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="main">
+    <div class="page-header">
+        <div>
+            <div class="page-title">📦 Products</div>
+            <div class="page-subtitle">Manage your product inventory</div>
+        </div>
+        <div class="header-actions">
+            <button class="btn-add-category" onclick="openCatModal(null)">🏷️ Add Category</button>
+            <button class="btn-add" onclick="openAddModal()">➕ Add Product</button>
+        </div>
+    </div>
+
+    <div id="alertBox" class="alert"></div>
+
+    <input class="search-bar" type="text"
+           placeholder="🔍 Search products..."
+           onkeyup="filterTable(this.value)"/>
+
+<!-- ── Product Filter Bar ── -->
+<div class="filter-bar-row" id="productFilterBar">
+    <div class="filter-group">
+        <span class="filter-label">Sort</span>
+        <button class="filter-btn active" data-sort="default"     onclick="setSort('default',this)">Default</button>
+        <button class="filter-btn"        data-sort="az"          onclick="setSort('az',this)">A→Z</button>
+        <button class="filter-btn"        data-sort="za"          onclick="setSort('za',this)">Z→A</button>
+        <button class="filter-btn"        data-sort="price-asc"   onclick="setSort('price-asc',this)">Price ↑</button>
+        <button class="filter-btn"        data-sort="price-desc"  onclick="setSort('price-desc',this)">Price ↓</button>
+        <button class="filter-btn"        data-sort="stock-asc"   onclick="setSort('stock-asc',this)">Stock ↑</button>
+        <button class="filter-btn"        data-sort="stock-desc"  onclick="setSort('stock-desc',this)">Stock ↓</button>
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+        <span class="filter-label">Category</span>
+        <select class="filter-select-sm" id="catFilterSelect" onchange="applyProductFilters()">
+            <option value="">All</option>
+        </select>
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+        <span class="filter-label">Stock</span>
+        <button class="filter-btn active" data-stock="all" onclick="setStockFilter('all',this)">All</button>
+        <button class="filter-btn" data-stock="in"          onclick="setStockFilter('in',this)">In Stock</button>
+        <button class="filter-btn" data-stock="low"         onclick="setStockFilter('low',this)">Low Stock</button>
+        <button class="filter-btn" data-stock="out"         onclick="setStockFilter('out',this)">Out of Stock</button>
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+        <span class="filter-label">Add-Ons</span>
+        <button class="filter-btn active" data-addon="all"  onclick="setAddonFilter('all',this)">All</button>
+        <button class="filter-btn"        data-addon="yes"  onclick="setAddonFilter('yes',this)">Has Add-Ons</button>
+        <button class="filter-btn"        data-addon="no"   onclick="setAddonFilter('no',this)">No Add-Ons</button>
+    </div>
+</div>
+
+    <div class="table-card">
+        {% if products %}
+        <table id="productsTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                {% for product in products %}
+                <tr data-name="{{ product.name | lower }}"
+                    data-price="{{ product.price }}"
+                    data-qty="{{ product.quantity }}"
+                    data-cat="{{ product.category_id or '' }}"
+                    data-status="{% if product.quantity == 0 %}out{% elif product.quantity <= 5 %}low{% else %}in{% endif %}">
+                    <td>#{{ product.id }}</td>
+                    <td>{{ product.name }}</td>
+                    <td>
+                        {% if product.category %}
+                        <span style="display:inline-flex;align-items:center;gap:6px;">
+                            <span style="width:10px;height:10px;border-radius:50%;background-color:{{ product.category.color or '#cccccc' }};display:inline-block;"></span>
+                            {% if product.category.parent %}
+                                <span style="color:var(--text-dim);font-size:11px;">{{ product.category.parent.name }} ›</span>
+                            {% endif %}
+                            {{ product.category.name }}
+                        </span>
+                        {% else %}
+                        <span style="color:var(--text-dim);">—</span>
+                        {% endif %}
+                    </td>
+                    <td>₱{{ "%.2f"|format(product.price) }}</td>
+                    <td>{{ product.quantity }}</td>
+                    <td>
+                        {% if product.quantity == 0 %}
+                        <span class="stock-badge stock-out">Out of Stock</span>
+                        {% elif product.quantity <= 5 %}
+                        <span class="stock-badge stock-low">Low Stock</span>
+                        {% else %}
+                        <span class="stock-badge stock-ok">In Stock</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn-edit"
+                                    data-id="{{ product.id }}"
+                                    data-name="{{ product.name }}"
+                                    data-price="{{ product.price }}"
+                                    data-qty="{{ product.quantity }}"
+                                    data-category="{{ product.category_id or '' }}"
+                                    onclick="openEditModal(this)">Edit</button>
+                            <button class="btn-void"
+                                    data-id="{{ product.id }}"
+                                    data-name="{{ product.name }}"
+                                    onclick="voidProduct(this)">Void</button>
+                            <button class="btn-delete"
+                                    data-id="{{ product.id }}"
+                                    data-name="{{ product.name }}"
+                                    onclick="deleteProduct(this)">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📦</div>
+            <div>No products yet.</div>
+            <div style="margin-top:8px;font-size:12px">Click "Add Product" to get started!</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ── CATEGORIES SECTION ── -->
+    <div class="section-divider">🏷️ Categories</div>
+    <div class="categories-tree" id="categoriesTree">
+        <div style="color:var(--text-dim);font-size:13px;">Loading categories...</div>
+    </div>
+
+    <!-- ── ADD-ONS SECTION ── -->
+    <div class="section-divider">➕ Add Ons</div>
+    <div class="addons-header-row">
+        <div style="font-size:13px;color:var(--text-muted);">
+            Add-ons are grouped by main category and available in the POS item options.
+        </div>
+        <button class="btn-add-addon-main" onclick="openAddonModal()">➕ Add Add-On</button>
+    </div>
+    <div id="addonsContainer">
+        <div style="color:var(--text-dim);font-size:13px;">Loading add-ons...</div>
+    </div>
+</div>
+
+<!-- ── PRODUCT MODAL (Add / Edit) ── -->
+<div class="modal-overlay" id="productModal">
+    <div class="modal">
+        <div class="modal-title" id="modalTitle">Add Product</div>
+        <input type="hidden" id="productId"/>
+        <div class="form-group">
+            <label>Product Name</label>
+            <input class="form-input" type="text" id="productName" placeholder="e.g. Coffee"/>
+        </div>
+        <div class="form-group">
+            <label>Price (PHP)</label>
+            <input class="form-input" type="number" id="productPrice" placeholder="0.00" step="0.01" min="0"/>
+        </div>
+        <div class="form-group">
+            <label>Stock Quantity</label>
+            <input class="form-input" type="number" id="productQty" placeholder="0" min="0"/>
+        </div>
+        <div class="form-group">
+            <label>Category</label>
+            <select class="form-select" id="productCategory">
+                <option value="">— No Category —</option>
+            </select>
+        </div>
+        <div class="form-group" id="photoGroup" style="display:none;">
+            <label>Product Photo</label>
+            <div class="photo-upload-area" id="photoUploadArea">
+                <input type="file" id="productPhoto" accept="image/png,image/jpeg,image/gif,image/webp"
+                       onchange="previewPhoto(this)"/>
+                <div class="photo-preview-wrap">
+                    <img class="photo-preview" id="photoPreview"
+                         src="/static/default_product.png"
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2264%22 height=%2264%22%3E%3Crect width=%2264%22 height=%2264%22 fill=%22%232a2a2a%22/%3E%3Ctext x=%2232%22 y=%2240%22 text-anchor=%22middle%22 font-size=%2228%22%3E🛍️%3C/text%3E%3C/svg%3E';this.onerror=null;"
+                         alt="Preview"/>
+                    <div class="photo-upload-label">
+                        <strong>Click to upload</strong><br/>
+                        PNG, JPG, GIF, WEBP · max 4 MB<br/>
+                        <span style="color:var(--text-dim);font-size:11px;">Leave blank to keep existing photo</span>
+                    </div>
+                </div>
+            </div>
+            <button type="button" id="removeImageBtn"
+                    style="margin-top:8px;width:100%;padding:8px;background:transparent;color:var(--red);
+                           border:1px solid var(--red);border-radius:6px;font-size:12px;font-weight:700;
+                           cursor:pointer;display:none;transition:all 0.2s;"
+                    onclick="removeProductImage()">🗑️ Remove Image</button>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveProduct()">Save</button>
+            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── CATEGORY MODAL ── -->
+<div class="modal-overlay" id="categoryModal">
+    <div class="cat-modal">
+        <div class="modal-title" id="catModalTitle">🏷️ Add Category</div>
+        <input type="hidden" id="catParentId" value=""/>
+        <div class="form-group" id="catParentDisplay" style="display:none;">
+            <label>Parent Category</label>
+            <div style="padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:13px;" id="catParentName"></div>
+            <div class="parent-note">This will create a sub-category inside the parent above.</div>
+        </div>
+        <div class="form-group">
+            <label>Category Name</label>
+            <input class="form-input" type="text" id="catName" placeholder="e.g. Beverages"/>
+        </div>
+        <div class="form-group">
+            <label>Color</label>
+            <div class="color-swatches" id="colorSwatches"></div>
+            <input type="hidden" id="catColor" value="#f5c518"/>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveCategory()">Save</button>
+            <button class="btn-cancel" onclick="closeCatModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── ADD-ON MODAL ── -->
+<div class="modal-overlay" id="addonModal">
+    <div class="addon-modal">
+        <div class="modal-title">➕ Add Add-On</div>
+        <div class="form-group">
+            <label>Add-On Name</label>
+            <input class="form-input" type="text" id="addonName" placeholder="e.g. Extra Cheese"/>
+        </div>
+        <div class="form-group">
+            <label>Price (PHP)</label>
+            <input class="form-input" type="number" id="addonPrice" placeholder="0.00" step="0.01" min="0"/>
+        </div>
+        <div class="form-group">
+            <label>Main Category (optional)</label>
+            <select class="form-select" id="addonCategory">
+                <option value="">— No Category —</option>
+            </select>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
+                Only main categories are shown. Sub-categories are not applicable for add-ons.
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveAddon()">Save</button>
+            <button class="btn-cancel" onclick="closeAddonModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* ── THEME ── */
+    var THEME_KEY = 'prim3pos_theme';
+    function applyTheme(isDark) {
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        document.getElementById('themeLabel').textContent = isDark ? '🌙 Dark' : '☀️ Light';
+        document.getElementById('themeIcon').textContent  = isDark ? '🌙' : '☀️';
+        document.getElementById('themeToggle').checked    = !isDark;
+        localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+    }
+    function toggleTheme(chk) { applyTheme(!chk.checked); }
+    applyTheme(localStorage.getItem(THEME_KEY) !== 'light');
+
+    var allCategories = [];
+    var allAddons     = [];
+
+    var SWATCH_COLORS = [
+        '#f5c518','#4ecca3','#cc3333','#3a86ff','#ff6b6b',
+        '#a8dadc','#e9c46a','#f4a261','#2a9d8f','#888888'
+    ];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCategories();
+        buildSwatches();
+        loadAddons();
+    });
+
+    function buildSwatches() {
+        var container = document.getElementById('colorSwatches');
+        container.innerHTML = '';
+        SWATCH_COLORS.forEach(function(color) {
+            var div = document.createElement('div');
+            div.className = 'swatch' + (color === '#f5c518' ? ' selected' : '');
+            div.style.background = color;
+            div.title = color;
+            div.onclick = function() {
+                document.querySelectorAll('.swatch').forEach(function(s) { s.classList.remove('selected'); });
+                div.classList.add('selected');
+                document.getElementById('catColor').value = color;
+            };
+            container.appendChild(div);
+        });
+    }
+
+    /* ── Categories ── */
+    function loadCategories() {
+        fetch('/categories')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                allCategories = data.categories;
+                renderCategoriesTree();
+                populateCategoryDropdown();
+                populateAddonCategoryDropdown();
+                populateCatFilterDropdown();
+            } else {
+                showAlert('Failed to load categories.', 'error');
+            }
+        });
+    }
+
+    function renderCategoriesTree() {
+        var tree    = document.getElementById('categoriesTree');
+        var parents  = allCategories.filter(function(c) { return !c.parent_id; });
+        var children = allCategories.filter(function(c) { return !!c.parent_id; });
+
+        if (parents.length === 0) {
+            tree.innerHTML = '<div style="color:var(--text-dim);font-size:13px;">No categories yet.</div>';
+            return;
+        }
+
+        tree.innerHTML = parents.map(function(parent) {
+            var subs    = children.filter(function(c) { return c.parent_id === parent.id; });
+            var subHtml = subs.map(function(sub) {
+                return '<div class="sub-category-card">' +
+                    '<div class="sub-category-name">' +
+                    '<span class="category-dot" style="background:' + sub.color + '"></span>' +
+                    escHtml(sub.name) + '</div>' +
+                    '<div class="category-actions">' +
+                    '<button class="btn-delete-cat" onclick="event.stopPropagation();deleteCategory(' + sub.id + ',\'' + escAttr(sub.name) + '\')">✕</button>' +
+                    '</div></div>';
+            }).join('');
+
+            var hasSubs = subs.length > 0;
+            var groupId = 'sublist-' + parent.id;
+
+            return '<div class="category-group">' +
+                '<div class="category-card" onclick="toggleSubList(\'' + groupId + '\', this)">' +
+                '<div class="category-name">' +
+                (hasSubs ? '<span class="category-card-toggle">▼</span>' : '') +
+                '<span class="category-dot" style="background:' + parent.color + '"></span>' +
+                escHtml(parent.name) +
+                (hasSubs ? ' <span style="font-size:10px;color:var(--text-dim);margin-left:4px;">(' + subs.length + ' sub)</span>' : '') +
+                '</div>' +
+                '<div class="category-actions">' +
+                '<button class="btn-add-sub" onclick="event.stopPropagation();openCatModal(' + parent.id + ',\'' + escAttr(parent.name) + '\')">+ Sub</button>' +
+                '<button class="btn-delete-cat" onclick="event.stopPropagation();deleteCategory(' + parent.id + ',\'' + escAttr(parent.name) + '\')">✕</button>' +
+                '</div></div>' +
+                (hasSubs ? '<div class="sub-category-list" id="' + groupId + '">' + subHtml + '</div>' : '') +
+                '</div>';
+        }).join('');
+    }
+
+    function toggleSubList(groupId, cardEl) {
+        var list = document.getElementById(groupId);
+        if (!list) return;
+        list.classList.toggle('open');
+        cardEl.classList.toggle('open');
+    }
+
+    function populateCategoryDropdown() {
+        var select   = document.getElementById('productCategory');
+        var currentVal = select.value;
+        select.innerHTML = '<option value="">— No Category —</option>';
+
+        var parents  = allCategories.filter(function(c) { return !c.parent_id; });
+        var children = allCategories.filter(function(c) { return !!c.parent_id; });
+
+        parents.forEach(function(parent) {
+            var opt = document.createElement('option');
+            opt.value = parent.id;
+            opt.textContent = parent.name;
+            select.appendChild(opt);
+            children.filter(function(c) { return c.parent_id === parent.id; }).forEach(function(sub) {
+                var subOpt = document.createElement('option');
+                subOpt.value = sub.id;
+                subOpt.textContent = '\u00a0\u00a0└ ' + sub.name;
+                select.appendChild(subOpt);
+            });
+        });
+
+        children.filter(function(c) {
+            return !parents.find(function(p) { return p.id === c.parent_id; });
+        }).forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name;
+            select.appendChild(opt);
+        });
+
+        select.value = currentVal;
+    }
+
+    function populateAddonCategoryDropdown() {
+        var select = document.getElementById('addonCategory');
+        select.innerHTML = '<option value="">— No Category —</option>';
+        allCategories.filter(function(c) { return !c.parent_id; }).forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name;
+            select.appendChild(opt);
+        });
+    }
+
+    function openCatModal(parentId, parentName) {
+        document.getElementById('catName').value  = '';
+        document.getElementById('catColor').value = '#f5c518';
+        buildSwatches();
+
+        var parentDisplay = document.getElementById('catParentDisplay');
+        var parentIdInput = document.getElementById('catParentId');
+        var catModalTitle = document.getElementById('catModalTitle');
+
+        if (parentId) {
+            parentIdInput.value = parentId;
+            document.getElementById('catParentName').textContent = parentName;
+            parentDisplay.style.display = 'block';
+            catModalTitle.textContent = '🏷️ Add Sub-Category';
+        } else {
+            parentIdInput.value = '';
+            parentDisplay.style.display = 'none';
+            catModalTitle.textContent = '🏷️ Add Category';
+        }
+        document.getElementById('categoryModal').classList.add('visible');
+    }
+
+    function closeCatModal() { document.getElementById('categoryModal').classList.remove('visible'); }
+
+    function saveCategory() {
+        var name     = document.getElementById('catName').value.trim();
+        var color    = document.getElementById('catColor').value;
+        var parentId = document.getElementById('catParentId').value || null;
+        if (!name) { showAlert('Please enter a category name!', 'error'); return; }
+
+        fetch('/categories/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, color: color, parent_id: parentId ? parseInt(parentId) : null })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) { closeCatModal(); showAlert(data.message, 'success'); loadCategories(); }
+            else showAlert(data.error, 'error');
+        });
+    }
+
+    function deleteCategory(id, name) {
+        if (!confirm('Delete category "' + name + '"? Products will become uncategorized and sub-categories will be promoted.')) return;
+        fetch('/categories/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) { showAlert(data.message, 'success'); loadCategories(); }
+            else showAlert(data.error, 'error');
+        });
+    }
+
+    /* ── Add-ons ── */
+    function loadAddons() {
+        fetch('/get_addons')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            allAddons = data.addons || [];
+            // track which categories have at least one add-on (for filter)
+            _addonCatIds = new Set(
+                allAddons
+                    .filter(function(a) { return a.category_id; })
+                    .map(function(a) { return String(a.category_id); })
+            );
+            renderAddons();
+        })
+        .catch(function() {
+            document.getElementById('addonsContainer').innerHTML =
+                '<div style="color:var(--text-dim);font-size:13px;">Add-ons unavailable.</div>';
+        });
+    }
+
+    function renderAddons() {
+        var container = document.getElementById('addonsContainer');
+        if (allAddons.length === 0) {
+            container.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:16px 0;">No add-ons yet. Click "Add Add-On" to create one.</div>';
+            return;
+        }
+
+        var groups       = {};
+        var uncategorized = [];
+        var catMap       = {};
+        allCategories.filter(function(c) { return !c.parent_id; }).forEach(function(c) { catMap[c.id] = c; });
+
+        allAddons.forEach(function(a) {
+            if (a.category_id && catMap[a.category_id]) {
+                var cid = String(a.category_id);
+                if (!groups[cid]) groups[cid] = { cat: catMap[a.category_id], items: [] };
+                groups[cid].items.push(a);
+            } else {
+                uncategorized.push(a);
+            }
+        });
+
+        var html = '';
+        Object.keys(groups).forEach(function(cid) {
+            var g       = groups[cid];
+            var groupId = 'addon-group-' + cid;
+            html += '<div class="addon-group">' +
+                '<div class="addon-group-header collapsed" onclick="toggleAddonGroup(\'' + groupId + '\', this)">' +
+                '<span class="category-dot" style="background:' + g.cat.color + '"></span>' +
+                escHtml(g.cat.name) +
+                ' <span style="color:var(--text-dim);font-weight:400;">(' + g.items.length + ')</span>' +
+                '<span class="caret" style="transform:rotate(-90deg)">▼</span></div>' +
+                '<div class="addon-group-list collapsed" id="' + groupId + '">' +
+                g.items.map(addonCardHtml).join('') +
+                '</div></div>';
+        });
+
+        if (uncategorized.length > 0) {
+            var groupId = 'addon-group-uncategorized';
+            html += '<div class="addon-group">' +
+                '<div class="addon-group-header collapsed" onclick="toggleAddonGroup(\'' + groupId + '\', this)">' +
+                '🔘 Uncategorized' +
+                ' <span style="color:var(--text-dim);font-weight:400;">(' + uncategorized.length + ')</span>' +
+                '<span class="caret" style="transform:rotate(-90deg)">▼</span></div>' +
+                '<div class="addon-group-list collapsed" id="' + groupId + '">' +
+                uncategorized.map(addonCardHtml).join('') +
+                '</div></div>';
+        }
+
+        container.innerHTML = html;
+    }
+
+    function addonCardHtml(a) {
+        return '<div class="addon-card">' +
+            '<span class="addon-card-name">+ ' + escHtml(a.name) + '</span>' +
+            '<span class="addon-card-price">₱' + parseFloat(a.price).toFixed(2) + '</span>' +
+            '<button class="btn-delete-addon" onclick="deleteAddon(' + a.id + ',\'' + escAttr(a.name) + '\')">✕ Remove</button>' +
+            '</div>';
+    }
+
+    function toggleAddonGroup(groupId, headerEl) {
+        var list = document.getElementById(groupId);
+        if (!list) return;
+        list.classList.toggle('collapsed');
+        headerEl.classList.toggle('collapsed');
+    }
+
+    function openAddonModal() {
+        document.getElementById('addonName').value     = '';
+        document.getElementById('addonPrice').value    = '';
+        document.getElementById('addonCategory').value = '';
+        document.getElementById('addonModal').classList.add('visible');
+    }
+
+    function closeAddonModal() { document.getElementById('addonModal').classList.remove('visible'); }
+
+    function saveAddon() {
+        var name  = document.getElementById('addonName').value.trim();
+        var price = parseFloat(document.getElementById('addonPrice').value) || 0;
+        var catId = document.getElementById('addonCategory').value || null;
+        if (!name) { showAlert('Please enter an add-on name!', 'error'); return; }
+
+        fetch('/addons/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, price: price, category_id: catId ? parseInt(catId) : null })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) { closeAddonModal(); showAlert(data.message, 'success'); loadAddons(); }
+            else showAlert(data.error, 'error');
+        });
+    }
+
+    function deleteAddon(id, name) {
+        if (!confirm('Delete add-on "' + name + '"?')) return;
+        fetch('/addons/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) { showAlert(data.message, 'success'); loadAddons(); }
+            else showAlert(data.error, 'error');
+        });
+    }
+
+    /* ── Product modal ── */
+    function openAddModal() {
+        document.getElementById('modalTitle').textContent  = 'Add Product';
+        document.getElementById('productId').value        = '';
+        document.getElementById('productName').value      = '';
+        document.getElementById('productPrice').value     = '';
+        document.getElementById('productQty').value       = '';
+        document.getElementById('productCategory').value  = '';
+        document.getElementById('photoGroup').style.display = 'none';
+        document.getElementById('productModal').classList.add('visible');
+    }
+
+    function openEditModal(btn) {
+        var pid = btn.getAttribute('data-id');
+        document.getElementById('modalTitle').textContent    = 'Edit Product';
+        document.getElementById('productId').value           = pid;
+        document.getElementById('productName').value         = btn.getAttribute('data-name');
+        document.getElementById('productPrice').value        = btn.getAttribute('data-price');
+        document.getElementById('productQty').value          = btn.getAttribute('data-qty');
+        document.getElementById('productCategory').value     = btn.getAttribute('data-category') || '';
+        document.getElementById('photoGroup').style.display  = 'block';
+
+        var preview   = document.getElementById('photoPreview');
+        preview.src   = '/products/' + pid + '/photo?t=' + Date.now();
+        preview.dataset.removed = '';
+        document.getElementById('productPhoto').value = '';
+
+        var removeBtn = document.getElementById('removeImageBtn');
+        removeBtn.style.display = 'block';
+        preview.onerror = function() {
+            this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2264%22 height=%2264%22%3E%3Crect width=%2264%22 height=%2264%22 fill=%22%232a2a2a%22/%3E%3Ctext x=%2232%22 y=%2240%22 text-anchor=%22middle%22 font-size=%2228%22%3E🛍%EF%B8%8F%3C/text%3E%3C/svg%3E';
+            removeBtn.style.display = 'none';
+            this.onerror = null;
+        };
+        document.getElementById('productModal').classList.add('visible');
+    }
+
+    function removeProductImage() {
+        var preview = document.getElementById('photoPreview');
+        preview.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2264%22 height=%2264%22%3E%3Crect width=%2264%22 height=%2264%22 fill=%22%232a2a2a%22/%3E%3Ctext x=%2232%22 y=%2240%22 text-anchor=%22middle%22 font-size=%2228%22%3E🛍%EF%B8%8F%3C/text%3E%3C/svg%3E';
+        preview.dataset.removed = '1';
+        document.getElementById('productPhoto').value = '';
+        document.getElementById('removeImageBtn').style.display = 'none';
+    }
+
+    function previewPhoto(input) {
+        if (!input.files || !input.files[0]) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var preview = document.getElementById('photoPreview');
+            preview.src = e.target.result;
+            preview.dataset.removed = '';
+            document.getElementById('removeImageBtn').style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    function closeModal() {
+        document.getElementById('productModal').classList.remove('visible');
+        document.getElementById('productPhoto').value = '';
+        document.getElementById('removeImageBtn').style.display = 'none';
+        var preview = document.getElementById('photoPreview');
+        if (preview) preview.dataset.removed = '';
+    }
+
+    function showAlert(message, type) {
+        var box = document.getElementById('alertBox');
+        box.textContent = message;
+        box.className   = 'alert alert-' + type;
+        setTimeout(function() { box.className = 'alert'; }, 3000);
+    }
+
+    function saveProduct() {
+        var id         = document.getElementById('productId').value;
+        var name       = document.getElementById('productName').value.trim();
+        var price      = parseFloat(document.getElementById('productPrice').value);
+        var qty        = parseInt(document.getElementById('productQty').value);
+        var categoryId = document.getElementById('productCategory').value || null;
+        var photoFile  = document.getElementById('productPhoto').files[0];
+        var removePhoto = document.getElementById('photoPreview').dataset.removed === '1';
+
+        if (!name || isNaN(price) || isNaN(qty)) {
+            showAlert('Please fill in all fields correctly!', 'error');
+            return;
+        }
+
+        if (id && photoFile) {
+            var fd = new FormData();
+            fd.append('id', id);
+            fd.append('name', name);
+            fd.append('price', price);
+            fd.append('quantity', qty);
+            fd.append('category_id', categoryId || '');
+            fd.append('photo', photoFile);
+
+            fetch('/products/edit', { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) { closeModal(); showAlert(data.message, 'success'); setTimeout(function() { location.reload(); }, 900); }
+                else showAlert(data.error, 'error');
+            });
+        } else {
+            var url  = id ? '/products/edit' : '/products/add';
+            var body = { name: name, price: price, quantity: qty, category_id: categoryId ? parseInt(categoryId) : null };
+            if (id) { body.id = parseInt(id); body.remove_photo = removePhoto; }
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) { closeModal(); showAlert(data.message, 'success'); setTimeout(function() { location.reload(); }, 900); }
+                else showAlert(data.error, 'error');
+            });
+        }
+    }
+
+    function voidProduct(btn) {
+        var id   = btn.getAttribute('data-id');
+        var name = btn.getAttribute('data-name');
+        if (!confirm('Void "' + name + '"? This will set its stock to 0.')) return;
+        fetch('/products/void', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: parseInt(id) })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) { showAlert(data.message, 'success'); setTimeout(function() { location.reload(); }, 900); }
+            else showAlert(data.error, 'error');
+        });
+    }
+
+    function deleteProduct(btn) {
+        var id   = btn.getAttribute('data-id');
+        var name = btn.getAttribute('data-name');
+        if (!confirm('Are you sure you want to delete ' + name + '?')) return;
+        fetch('/products/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: parseInt(id) })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) { showAlert(data.message, 'success'); setTimeout(function() { location.reload(); }, 900); }
+            else showAlert(data.error, 'error');
+        });
+    }
+
+// ── Product filter / sort state ───────────────────────────────────
+var _pSort      = 'default';
+var _pStock     = 'all';
+var _pAddon     = 'all';
+var _addonCatIds = new Set();   // populated after loadAddons()
+
+function applyProductFilters() {
+    var search  = (document.querySelector('.search-bar') || {value: ''}).value.toLowerCase();
+    var catVal  = (document.getElementById('catFilterSelect') || {value: ''}).value;
+    var rows    = Array.from(document.querySelectorAll('#tableBody tr'));
+
+    // ── Filter ──────────────────────────────────────────────────
+    rows.forEach(function (row) {
+        var name   = row.getAttribute('data-name') || '';
+        var cat    = row.getAttribute('data-cat')  || '';
+        var status = row.getAttribute('data-status') || '';
+
+        var nameOk  = name.includes(search);
+        var catOk   = !catVal || cat === catVal;
+        var stockOk = _pStock === 'all' || status === _pStock;
+        var addonOk = _pAddon === 'all' ||
+                      (_pAddon === 'yes' && cat && _addonCatIds.has(cat)) ||
+                      (_pAddon === 'no'  && (!cat || !_addonCatIds.has(cat)));
+
+        row.style.display = (nameOk && catOk && stockOk && addonOk) ? '' : 'none';
+    });
+
+    // ── Sort (only visible rows) ──────────────────────────────
+    var tbody   = document.getElementById('tableBody');
+    var visible = rows.filter(function (r) { return r.style.display !== 'none'; });
+
+    visible.sort(function (a, b) {
+        switch (_pSort) {
+            case 'az':         return (a.getAttribute('data-name')  || '').localeCompare(b.getAttribute('data-name') || '');
+            case 'za':         return (b.getAttribute('data-name')  || '').localeCompare(a.getAttribute('data-name') || '');
+            case 'price-asc':  return parseFloat(a.getAttribute('data-price') || 0) - parseFloat(b.getAttribute('data-price') || 0);
+            case 'price-desc': return parseFloat(b.getAttribute('data-price') || 0) - parseFloat(a.getAttribute('data-price') || 0);
+            case 'stock-asc':  return parseInt(a.getAttribute('data-qty') || 0) - parseInt(b.getAttribute('data-qty') || 0);
+            case 'stock-desc': return parseInt(b.getAttribute('data-qty') || 0) - parseInt(a.getAttribute('data-qty') || 0);
+            default:           return 0;
+        }
+    });
+
+    visible.forEach(function (r) { tbody.appendChild(r); });
+}
+
+// ── Product filter / sort state ───────────────────────────────────
+var _pSort      = 'default';
+var _pStock     = 'all';
+var _pAddon     = 'all';
+var _addonCatIds = new Set();   // populated after loadAddons()
+
+function applyProductFilters() {
+    var search  = (document.querySelector('.search-bar') || {value: ''}).value.toLowerCase();
+    var catVal  = (document.getElementById('catFilterSelect') || {value: ''}).value;
+    var rows    = Array.from(document.querySelectorAll('#tableBody tr'));
+
+    // ── Filter ──────────────────────────────────────────────────
+    rows.forEach(function (row) {
+        var name   = row.getAttribute('data-name') || '';
+        var cat    = row.getAttribute('data-cat')  || '';
+        var status = row.getAttribute('data-status') || '';
+
+        var nameOk  = name.includes(search);
+        var catOk   = !catVal || cat === catVal;
+        var stockOk = _pStock === 'all' || status === _pStock;
+        var addonOk = _pAddon === 'all' ||
+                      (_pAddon === 'yes' && cat && _addonCatIds.has(cat)) ||
+                      (_pAddon === 'no'  && (!cat || !_addonCatIds.has(cat)));
+
+        row.style.display = (nameOk && catOk && stockOk && addonOk) ? '' : 'none';
+    });
+
+    // ── Sort (only visible rows) ──────────────────────────────
+    var tbody   = document.getElementById('tableBody');
+    var visible = rows.filter(function (r) { return r.style.display !== 'none'; });
+
+    visible.sort(function (a, b) {
+        switch (_pSort) {
+            case 'az':         return (a.getAttribute('data-name')  || '').localeCompare(b.getAttribute('data-name') || '');
+            case 'za':         return (b.getAttribute('data-name')  || '').localeCompare(a.getAttribute('data-name') || '');
+            case 'price-asc':  return parseFloat(a.getAttribute('data-price') || 0) - parseFloat(b.getAttribute('data-price') || 0);
+            case 'price-desc': return parseFloat(b.getAttribute('data-price') || 0) - parseFloat(a.getAttribute('data-price') || 0);
+            case 'stock-asc':  return parseInt(a.getAttribute('data-qty') || 0) - parseInt(b.getAttribute('data-qty') || 0);
+            case 'stock-desc': return parseInt(b.getAttribute('data-qty') || 0) - parseInt(a.getAttribute('data-qty') || 0);
+            default:           return 0;
+        }
+    });
+
+    visible.forEach(function (r) { tbody.appendChild(r); });
+}
+
+// alias so the existing search-bar onkeyup still works
+function filterTable(search) { applyProductFilters(); }
+
+function setSort(val, btn) {
+    _pSort = val;
+    document.querySelectorAll('[data-sort]').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    applyProductFilters();
+}
+function setStockFilter(val, btn) {
+    _pStock = val;
+    document.querySelectorAll('[data-stock]').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    applyProductFilters();
+}
+function setAddonFilter(val, btn) {
+    _pAddon = val;
+    document.querySelectorAll('[data-addon]').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    applyProductFilters();
+}
+
+// ── Populate category dropdown for the filter bar ─────────────────
+function populateCatFilterDropdown() {
+    var sel = document.getElementById('catFilterSelect');
+    if (!sel) return;
+    // preserve current value
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">All Categories</option>';
+    allCategories.forEach(function (c) {
+        var opt = document.createElement('option');
+        opt.value = String(c.id);
+        opt.textContent = (c.parent_id ? '  └ ' : '') + c.name;
+        sel.appendChild(opt);
+    });
+    sel.value = cur;
+}
+
+function setSort(val, btn) {
+    _pSort = val;
+    document.querySelectorAll('[data-sort]').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    applyProductFilters();
+}
+function setStockFilter(val, btn) {
+    _pStock = val;
+    document.querySelectorAll('[data-stock]').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    applyProductFilters();
+}
+function setAddonFilter(val, btn) {
+    _pAddon = val;
+    document.querySelectorAll('[data-addon]').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    applyProductFilters();
+}
+
+// ── Populate category dropdown for the filter bar ─────────────────
+function populateCatFilterDropdown() {
+    var sel = document.getElementById('catFilterSelect');
+    if (!sel) return;
+    // preserve current value
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">All Categories</option>';
+    allCategories.forEach(function (c) {
+        var opt = document.createElement('option');
+        opt.value = String(c.id);
+        opt.textContent = (c.parent_id ? '  └ ' : '') + c.name;
+        sel.appendChild(opt);
+    });
+    sel.value = cur;
+}
+
+    function escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function escAttr(str) { return String(str).replace(/'/g, "\\'"); }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { closeModal(); closeCatModal(); closeAddonModal(); }
+    });
+</script>
+
+</body>
+</html>

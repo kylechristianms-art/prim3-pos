@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <script>
+        (function(){
+            var t = localStorage.getItem('prim3pos_theme');
+            if (t) document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+    <title>prim3-POS | Login</title>
+    <style>
+        :root,[data-theme="dark"]{
+            --bg:#0d0d0d;--surface:#1e1e1e;--surface2:#2a2a2a;
+            --border:#2a2a2a;--border2:#333;--text:#ffffff;
+            --text-muted:#888;--text-dim:#555;
+            --accent:#f5c518;--accent-h:#e6b800;--red:#cc3333;
+            --input-bg:#2a2a2a;--shadow:0 4px 24px rgba(0,0,0,.5);
+        }
+        [data-theme="light"]{
+            --bg:#f0f2f5;--surface:#ffffff;--surface2:#f5f5f5;
+            --border:#e0e0e0;--border2:#d0d0d0;--text:#111111;
+            --text-muted:#666;--text-dim:#aaa;
+            --accent:#d4a017;--accent-h:#b8880f;--red:#b02020;
+            --input-bg:#f5f5f5;--shadow:0 4px 24px rgba(0,0,0,.08);
+        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{
+            background:var(--bg);font-family:Arial,sans-serif;
+            display:flex;justify-content:center;align-items:center;
+            min-height:100vh;transition:background .25s,color .25s;
+            position:relative;
+        }
+        .corner-toggle{
+            position:fixed;top:16px;right:20px;
+            display:flex;align-items:center;gap:8px;
+        }
+        .corner-toggle-label{font-size:11px;color:var(--text-muted);}
+        .theme-toggle{position:relative;width:44px;height:24px;}
+        .theme-toggle input{opacity:0;width:0;height:0;position:absolute;}
+        .theme-toggle-track{
+            position:absolute;inset:0;border-radius:12px;cursor:pointer;
+            background:var(--surface2);border:1px solid var(--border);
+            transition:background .25s,border-color .25s;
+        }
+        .theme-toggle input:checked+.theme-toggle-track{
+            background:var(--accent);border-color:var(--accent);
+        }
+        .theme-toggle-thumb{
+            position:absolute;top:3px;left:3px;
+            width:16px;height:16px;border-radius:50%;
+            background:var(--text-muted);font-size:9px;
+            display:flex;align-items:center;justify-content:center;
+            transition:transform .25s,background .25s;pointer-events:none;
+        }
+        .theme-toggle input:checked~.theme-toggle-thumb{
+            transform:translateX(20px);background:#0d0d0d;
+        }
+        .login-box{
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:12px;padding:48px 40px;
+            width:100%;max-width:400px;text-align:center;
+            box-shadow:var(--shadow);
+            transition:background .25s,border-color .25s;
+        }
+        .logo{
+            font-size:32px;font-weight:900;color:var(--accent);
+            letter-spacing:2px;margin-bottom:8px;
+        }
+        .logo span{color:var(--text);}
+        .tagline{font-size:13px;color:var(--text-muted);margin-bottom:36px;}
+        .form-group{margin-bottom:16px;text-align:left;}
+        label{
+            display:block;font-size:12px;color:var(--text-muted);
+            margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;
+        }
+        input[type="text"],input[type="password"]{
+            width:100%;padding:12px 16px;
+            background:var(--input-bg);border:1px solid var(--border2);
+            border-radius:8px;color:var(--text);font-size:14px;outline:none;
+            transition:border-color .2s,background .25s;
+        }
+        input:focus{border-color:var(--accent);}
+        .btn-login{
+            width:100%;padding:14px;
+            background:var(--accent);color:#0d0d0d;
+            border:none;border-radius:8px;font-size:15px;font-weight:700;
+            cursor:pointer;margin-top:8px;
+            transition:background .2s;
+        }
+        .btn-login:hover{background:var(--accent-h);}
+        .error{
+            background:#2a1010;border:1px solid var(--red);
+            color:#ff6b6b;padding:10px 16px;border-radius:8px;
+            font-size:13px;margin-bottom:16px;
+        }
+        [data-theme="light"] .error{background:#fff0f0;}
+    </style>
+</head>
+<body>
+
+<div class="corner-toggle">
+    <span class="corner-toggle-label" id="themeLabel">Dark</span>
+    <label class="theme-toggle">
+        <input type="checkbox" id="themeToggle" onchange="toggleTheme(this)"/>
+        <div class="theme-toggle-track"></div>
+        <div class="theme-toggle-thumb" id="themeIcon">🌙</div>
+    </label>
+</div>
+
+<div class="login-box">
+    <div class="logo">prim3<span>-POS</span></div>
+    <div class="tagline">Sign in to your account</div>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/login" id="loginForm">
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" name="username" id="usernameInput"
+                   placeholder="Enter username" autocomplete="username" required/>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" id="passwordInput"
+                   placeholder="Enter password" autocomplete="current-password" required/>
+        </div>
+        <button type="submit" class="btn-login">Sign In</button>
+    </form>
+</div>
+
+<script>
+    /* ── Theme ── */
+    var THEME_KEY = 'prim3pos_theme';
+    function applyTheme(isDark){
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        document.getElementById('themeLabel').textContent  = isDark ? 'Dark' : 'Light';
+        document.getElementById('themeIcon').textContent   = isDark ? '🌙' : '☀️';
+        document.getElementById('themeToggle').checked     = !isDark;
+        localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+    }
+    function toggleTheme(chk){ applyTheme(!chk.checked); }
+    applyTheme(localStorage.getItem(THEME_KEY) !== 'light');
+
+    /* ── FIX: Enter key submits the login form ── */
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('loginForm');
+        document.querySelectorAll('#usernameInput, #passwordInput').forEach(function (inp) {
+            inp.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

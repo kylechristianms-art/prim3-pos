@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <script>
+        (function(){
+            var t = localStorage.getItem('prim3pos_theme');
+            if (t) document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+    <title>prim3-POS | Users</title>
+    <style>
+        :root,[data-theme="dark"]{
+            --bg:#0d0d0d;--surface:#1e1e1e;--surface2:#2a2a2a;--surface3:#161616;
+            --border:#2a2a2a;--border2:#333;--text:#fff;--text-muted:#888;--text-dim:#555;
+            --accent:#f5c518;--accent-h:#e6b800;--green:#4ecca3;--red:#cc3333;--blue:#64b5f6;
+            --input-bg:#2a2a2a;--row-hover:#2a2a2a;--shadow:0 4px 24px rgba(0,0,0,.5);
+        }
+        [data-theme="light"]{
+            --bg:#f0f2f5;--surface:#fff;--surface2:#f5f5f5;--surface3:#ebebeb;
+            --border:#e0e0e0;--border2:#d0d0d0;--text:#111;--text-muted:#666;--text-dim:#aaa;
+            --accent:#d4a017;--accent-h:#b8880f;--green:#1a9c72;--red:#b02020;--blue:#1976d2;
+            --input-bg:#f5f5f5;--row-hover:#f5f5f5;--shadow:0 4px 24px rgba(0,0,0,.08);
+        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{background:var(--bg);font-family:Arial,sans-serif;color:var(--text);min-height:100vh;display:flex;transition:background .25s,color .25s;}
+        .sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;position:fixed;height:100vh;transition:background .25s,border-color .25s;}
+        .sidebar-logo{font-size:24px;font-weight:900;color:var(--accent);padding:0 24px 24px;border-bottom:1px solid var(--border);letter-spacing:2px;}
+        .sidebar-logo span{color:var(--text);}
+        .sidebar-nav{flex:1;padding:16px 0;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:12px 24px;color:var(--text-muted);text-decoration:none;font-size:14px;transition:all .2s;border-left:3px solid transparent;}
+        .nav-item:hover{color:var(--text);background:var(--surface2);}
+        .nav-item.active{color:var(--accent);border-left-color:var(--accent);background:var(--surface2);}
+        .nav-icon{font-size:18px;}
+        .sidebar-footer{padding:16px 24px;border-top:1px solid var(--border);}
+        .user-info{font-size:12px;color:var(--text-muted);margin-bottom:12px;}
+        .user-info strong{color:var(--text);display:block;font-size:14px;}
+        .btn-logout{display:block;width:100%;padding:10px;background:var(--surface2);color:var(--red);border:1px solid var(--red);border-radius:8px;text-align:center;text-decoration:none;font-size:13px;font-weight:700;transition:all .2s;}
+        .btn-logout:hover{background:var(--red);color:#fff;}
+        .theme-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+        .theme-label-text{font-size:12px;color:var(--text-muted);}
+        .theme-toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+        .theme-toggle input{opacity:0;width:0;height:0;position:absolute;}
+        .theme-toggle-track{position:absolute;inset:0;border-radius:12px;cursor:pointer;background:var(--surface2);border:1px solid var(--border);transition:background .25s,border-color .25s;}
+        .theme-toggle input:checked+.theme-toggle-track{background:var(--accent);border-color:var(--accent);}
+        .theme-toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text-muted);font-size:9px;display:flex;align-items:center;justify-content:center;transition:transform .25s,background .25s;pointer-events:none;}
+        .theme-toggle input:checked~.theme-toggle-thumb{transform:translateX(20px);background:#0d0d0d;}
+        .main{margin-left:240px;flex:1;padding:32px;}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+        .page-title{font-size:24px;font-weight:700;}
+        .page-subtitle{font-size:13px;color:var(--text-muted);margin-top:4px;}
+        .btn-add{padding:12px 24px;background:var(--accent);color:#0d0d0d;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s;}
+        .btn-add:hover{background:var(--accent-h);}
+        .alert{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none;}
+        .alert-success{background:#0d1f17;border:1px solid #1e4a35;color:var(--green);display:block;}
+        .alert-error{background:#1f0d0d;border:1px solid #4a1e1e;color:var(--red);display:block;}
+        [data-theme="light"] .alert-success{background:#e8faf5;border-color:#a3d9c8;}
+        [data-theme="light"] .alert-error{background:#fff0f0;border-color:#f5b8b8;}
+        .users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:8px;}
+        .user-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;transition:border-color .2s,background .25s;}
+        .user-card:hover{border-color:var(--border2);}
+        .user-card-header{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+        .user-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;flex-shrink:0;}
+        .avatar-admin{background:#2a1f00;color:var(--accent);border:2px solid var(--accent);}
+        .avatar-cashier{background:#0d1f17;color:var(--green);border:2px solid var(--green);}
+        .avatar-manager{background:#1a1a2e;color:var(--blue);border:2px solid var(--blue);}
+        [data-theme="light"] .avatar-admin{background:#fff8e0;}
+        [data-theme="light"] .avatar-cashier{background:#e8faf5;}
+        [data-theme="light"] .avatar-manager{background:#e8f0fe;}
+        .user-card-info{flex:1;min-width:0;}
+        .user-card-name{font-size:15px;font-weight:700;}
+        .role-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:capitalize;margin-top:4px;}
+        .role-admin{background:#2a1f00;color:var(--accent);}
+        .role-cashier{background:#0d1f17;color:var(--green);}
+        .role-manager{background:#1a1a2e;color:var(--blue);}
+        [data-theme="light"] .role-admin{background:#fff8e0;}
+        [data-theme="light"] .role-cashier{background:#e8faf5;}
+        [data-theme="light"] .role-manager{background:#e8f0fe;}
+        .pin-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);margin-top:10px;padding:8px 12px;background:var(--surface3);border-radius:8px;}
+        .pin-status.set{color:var(--green);}
+        .user-card-actions{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;}
+        .btn-action{padding:7px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;border:1px solid;background:var(--surface2);}
+        .btn-action.edit{color:var(--accent);border-color:var(--accent);}
+        .btn-action.edit:hover{background:var(--accent);color:#0d0d0d;}
+        .btn-action.pin{color:var(--green);border-color:var(--green);}
+        .btn-action.pin:hover{background:var(--green);color:#0d0d0d;}
+        .btn-action.delete{color:var(--red);border-color:var(--red);}
+        .btn-action.delete:hover{background:var(--red);color:#fff;}
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;align-items:center;justify-content:center;padding:20px;}
+        .modal-overlay.visible{display:flex;}
+        .modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:440px;transition:background .25s;}
+        .modal-title{font-size:18px;font-weight:700;margin-bottom:24px;}
+        .form-group{margin-bottom:16px;}
+        .form-group label{display:block;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+        .form-input{width:100%;padding:12px 16px;background:var(--input-bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:14px;outline:none;transition:border-color .2s,background .25s;}
+        .form-input:focus{border-color:var(--accent);}
+        .form-select{width:100%;padding:12px 16px;background:var(--input-bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:14px;outline:none;transition:background .25s;}
+        .form-select:focus{border-color:var(--accent);}
+        .form-hint{font-size:11px;color:var(--text-dim);margin-top:5px;}
+        .modal-actions{display:flex;gap:10px;margin-top:24px;}
+        .btn-save{flex:1;padding:12px;background:var(--accent);color:#0d0d0d;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s;}
+        .btn-save:hover{background:var(--accent-h);}
+        .btn-cancel{flex:1;padding:12px;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:color .2s,border-color .2s;}
+        .btn-cancel:hover{color:var(--text);border-color:var(--text-dim);}
+        .pin-dots{display:flex;gap:10px;justify-content:center;margin:16px 0;}
+        .pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);background:transparent;transition:all .15s;}
+        .pin-dot.filled{background:var(--accent);border-color:var(--accent);}
+        .pin-numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px;}
+        .pin-key{padding:14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;font-size:18px;font-weight:700;cursor:pointer;text-align:center;color:var(--text);transition:all .15s;}
+        .pin-key:hover{background:var(--row-hover);border-color:var(--text-dim);}
+        .pin-key:active{background:var(--accent);color:#0d0d0d;transform:scale(.95);}
+        .pin-key.clear{color:var(--red);border-color:var(--red);font-size:14px;}
+        .pin-key.clear:hover{background:var(--red);color:#fff;}
+        .pin-key.back{color:var(--text-muted);font-size:14px;}
+        .pin-modal-name{text-align:center;font-size:13px;color:var(--text-muted);margin-bottom:4px;}
+        .pin-modal-title{text-align:center;font-size:18px;font-weight:700;margin-bottom:16px;}
+        .empty-state{padding:60px;text-align:center;color:var(--text-dim);font-size:14px;}
+        .empty-icon{font-size:48px;margin-bottom:12px;}
+        .input-with-toggle{position:relative;}
+        .input-with-toggle .form-input{padding-right:44px;}
+        .toggle-pw{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:4px;}
+        .toggle-pw:hover{color:var(--text-dim);}
+        .self-warning{background:#1f1a00;border:1px solid #4a3a00;color:var(--accent);border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:16px;display:none;}
+        .self-warning.visible{display:block;}
+        [data-theme="light"] .self-warning{background:#fffbea;border-color:#e6c84a;}
+    </style>
+<base target="_blank">
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-logo">prim3<span>-POS</span></div>
+    <nav class="sidebar-nav">
+        <a href="/dashboard" class="nav-item" target="_self"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="/pos"       class="nav-item" target="_self"><span class="nav-icon">🛒</span> POS</a>
+        <a href="/orders"    class="nav-item" target="_self"><span class="nav-icon">📋</span> Orders</a>
+        {% if current_user.role in ['admin', 'manager'] %}
+        <a href="/products"  class="nav-item" target="_self"><span class="nav-icon">📦</span> Products</a>
+        <a href="/reports"   class="nav-item" target="_self"><span class="nav-icon">📈</span> Reports</a>
+        <a href="/users"     class="nav-item active" target="_self"><span class="nav-icon">👥</span> Users</a>
+        {% endif %}
+    </nav>
+    <div class="sidebar-footer">
+        <div class="theme-row">
+            <span class="theme-label-text" id="themeLabel">🌙 Dark</span>
+            <label class="theme-toggle">
+                <input type="checkbox" id="themeToggle" onchange="toggleTheme(this)"/>
+                <div class="theme-toggle-track"></div>
+                <div class="theme-toggle-thumb" id="themeIcon">🌙</div>
+            </label>
+        </div>
+        <div class="user-info">
+            <strong>{{ current_user.name }}</strong>
+            {{ current_user.role | capitalize }}
+        </div>
+        <a href="/logout" class="btn-logout" target="_self">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="main">
+    <div class="page-header">
+        <div>
+            <div class="page-title">👥 Users</div>
+            <div class="page-subtitle">Manage staff accounts and PINs</div>
+        </div>
+        <button class="btn-add" onclick="openAddModal()">➕ Add User</button>
+    </div>
+    <div id="alertBox" class="alert"></div>
+    <div class="users-grid" id="usersGrid">
+        <div class="empty-state"><div class="empty-icon">👥</div><div>Loading users...</div></div>
+    </div>
+</div>
+
+<!-- ── ADD / EDIT USER MODAL ── -->
+<div class="modal-overlay" id="userModal">
+    <div class="modal">
+        <div class="modal-title" id="userModalTitle">➕ Add User</div>
+        <input type="hidden" id="userId"/>
+        <div class="self-warning" id="selfWarning">⚠️ You are editing your own account.</div>
+        <div class="form-group">
+            <label>Full Name</label>
+            <input class="form-input" type="text" id="userName" placeholder="e.g. Juan dela Cruz"/>
+        </div>
+        <div class="form-group">
+            <label>Username</label>
+            <input class="form-input" type="text" id="userUsername" placeholder="e.g. juan"/>
+        </div>
+        <div class="form-group">
+            <label id="passwordLabel">Password</label>
+            <div class="input-with-toggle">
+                <input class="form-input" type="password" id="userPassword" placeholder="Enter password"/>
+                <button class="toggle-pw" type="button" onclick="togglePassword('userPassword',this)">👁️</button>
+            </div>
+            <div class="form-hint" id="passwordHint">Leave blank to keep current password (edit mode).</div>
+        </div>
+        {% if current_user.role == 'admin' %}
+        <div class="form-group" id="roleGroup">
+            <label>Role</label>
+            <select class="form-select" id="userRole"></select>
+        </div>
+        {% endif %}
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveUser()">💾 Save</button>
+            <button class="btn-cancel" onclick="closeUserModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── SET PIN MODAL ── -->
+<div class="modal-overlay" id="pinModal">
+    <div class="modal" style="max-width:320px;">
+        <div class="pin-modal-name" id="pinModalName"></div>
+        <div class="pin-modal-title">🔐 Set PIN</div>
+        <input type="hidden" id="pinUserId"/>
+        <div class="pin-dots" id="pinDots">
+            <div class="pin-dot" id="dot0"></div><div class="pin-dot" id="dot1"></div>
+            <div class="pin-dot" id="dot2"></div><div class="pin-dot" id="dot3"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);text-align:center;margin-bottom:12px;">Enter a 4-digit PIN for void authorization</div>
+        <div class="pin-numpad">
+            <button class="pin-key" onclick="pinKey('1')">1</button><button class="pin-key" onclick="pinKey('2')">2</button><button class="pin-key" onclick="pinKey('3')">3</button>
+            <button class="pin-key" onclick="pinKey('4')">4</button><button class="pin-key" onclick="pinKey('5')">5</button><button class="pin-key" onclick="pinKey('6')">6</button>
+            <button class="pin-key" onclick="pinKey('7')">7</button><button class="pin-key" onclick="pinKey('8')">8</button><button class="pin-key" onclick="pinKey('9')">9</button>
+            <button class="pin-key clear" onclick="pinClear()">✕ Clear</button><button class="pin-key" onclick="pinKey('0')">0</button><button class="pin-key back" onclick="pinBack()">⌫</button>
+        </div>
+        <div class="modal-actions" style="margin-top:16px;">
+            <button class="btn-save" onclick="savePin()">💾 Save PIN</button>
+            <button class="btn-cancel" onclick="closePinModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    var THEME_KEY = 'prim3pos_theme';
+    function applyTheme(isDark){
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        document.getElementById('themeLabel').textContent = isDark ? '🌙 Dark' : '☀️ Light';
+        document.getElementById('themeIcon').textContent  = isDark ? '🌙' : '☀️';
+        document.getElementById('themeToggle').checked    = !isDark;
+        localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+    }
+    function toggleTheme(chk){ applyTheme(!chk.checked); }
+    applyTheme(localStorage.getItem(THEME_KEY) !== 'light');
+
+    var currentPin     = '';
+    var currentUserId  = {{ current_user.id }};
+    var currentUserRole = '{{ current_user.role }}';
+    var usersCache     = {};
+
+    function buildRoleOptions(selectedRole) {
+        var select = document.getElementById('userRole');
+        if (!select) return;
+        select.innerHTML = '';
+        ['cashier', 'manager', 'admin'].forEach(function (r) {
+            var opt = document.createElement('option');
+            opt.value = r;
+            opt.textContent = r.charAt(0).toUpperCase() + r.slice(1);
+            if (r === selectedRole) opt.selected = true;
+            select.appendChild(opt);
+        });
+    }
+
+    function loadUsers() {
+        fetch('/users/list')
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.success) { showAlert(data.error, 'error'); return; }
+                renderUsers(data.users);
+            })
+            .catch(function (e) { showAlert('Failed to load users: ' + e, 'error'); });
+    }
+
+    /* ── FIX: managers cannot see admin accounts; @username removed ── */
+    function renderUsers(users) {
+        var grid = document.getElementById('usersGrid');
+        usersCache = {};
+
+        /* Security: managers should not see or interact with admin accounts */
+        if (currentUserRole === 'manager') {
+            users = users.filter(function (u) { return u.role !== 'admin'; });
+        }
+
+        if (!users || users.length === 0) {
+            grid.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div>No users yet.</div></div>';
+            return;
+        }
+
+        users.forEach(function (u) { usersCache[u.id] = u; });
+
+        var RANK = { admin: 3, manager: 2, cashier: 1 };
+        grid.innerHTML = users.map(function (u) {
+            var initials    = u.name.split(' ').map(function (w) { return w[0]; }).join('').substring(0, 2).toUpperCase();
+            var avatarClass = 'avatar-' + u.role;
+            var roleClass   = 'role-' + u.role;
+            var isSelf      = (u.id === currentUserId) ? ' <span style="font-size:10px;color:var(--accent);">(you)</span>' : '';
+            var targetRank  = RANK[u.role] || 0;
+            var pinStatus   = '';
+            if (targetRank >= RANK['manager']) {
+                pinStatus = u.has_pin
+                    ? '<div class="pin-status set">🔐 PIN is set</div>'
+                    : '<div class="pin-status">⚪ No PIN set</div>';
+            }
+            var canEdit   = true;
+            var canDelete = (u.id !== currentUserId);
+            var canPin    = (targetRank >= RANK['manager']);
+            if (currentUserRole === 'manager') {
+                if (targetRank >= RANK['manager'] && u.id !== currentUserId) {
+                    canEdit = false; canDelete = false; canPin = false;
+                }
+            }
+            var actions = '';
+            if (canEdit)   actions += '<button class="btn-action edit"   onclick="openEditModal(' + u.id + ')">✏️ Edit</button>';
+            if (canPin)    actions += '<button class="btn-action pin"    onclick="openPinModal(' + u.id + ',\'' + u.name.replace(/'/g, "\\'") + '\')">🔐 Set PIN</button>';
+            if (canDelete) actions += '<button class="btn-action delete" onclick="deleteUser(' + u.id + ',\'' + u.name.replace(/'/g, "\\'") + '\')">🗑️ Delete</button>';
+
+            /* NOTE: @username intentionally removed — security risk */
+            return '<div class="user-card">' +
+                '<div class="user-card-header">' +
+                '<div class="user-avatar ' + avatarClass + '">' + initials + '</div>' +
+                '<div class="user-card-info">' +
+                '<div class="user-card-name">' + u.name + isSelf + '</div>' +
+                '<span class="role-badge ' + roleClass + '">' + u.role + '</span>' +
+                '</div></div>' +
+                pinStatus +
+                '<div class="user-card-actions">' + actions + '</div>' +
+                '</div>';
+        }).join('');
+    }
+
+    function showAlert(message, type) {
+        var box = document.getElementById('alertBox');
+        box.textContent = message;
+        box.className   = 'alert alert-' + type;
+        setTimeout(function () { box.className = 'alert'; }, 4000);
+    }
+
+    function openAddModal() {
+        document.getElementById('userModalTitle').textContent = '➕ Add User';
+        document.getElementById('userId').value      = '';
+        document.getElementById('userName').value    = '';
+        document.getElementById('userUsername').value = '';
+        document.getElementById('userPassword').value = '';
+        buildRoleOptions('cashier');
+        document.getElementById('passwordHint').style.display = 'none';
+        document.getElementById('selfWarning').classList.remove('visible');
+        document.getElementById('userModal').classList.add('visible');
+    }
+
+    function openEditModal(userId) {
+        var u = usersCache[userId];
+        if (!u) { showAlert('User data not found.', 'error'); return; }
+        document.getElementById('userModalTitle').textContent = '✏️ Edit User';
+        document.getElementById('userId').value       = u.id;
+        document.getElementById('userName').value     = u.name;
+        document.getElementById('userUsername').value = u.username;
+        document.getElementById('userPassword').value = '';
+        buildRoleOptions(u.role);
+        document.getElementById('passwordHint').style.display = 'block';
+        var selfWarn = document.getElementById('selfWarning');
+        if (u.id === currentUserId) selfWarn.classList.add('visible');
+        else selfWarn.classList.remove('visible');
+        document.getElementById('userModal').classList.add('visible');
+    }
+
+    function closeUserModal() { document.getElementById('userModal').classList.remove('visible'); }
+
+    function togglePassword(inputId, btn) {
+        var input = document.getElementById(inputId);
+        if (input.type === 'password') { input.type = 'text'; btn.textContent = '🙈'; }
+        else { input.type = 'password'; btn.textContent = '👁️'; }
+    }
+
+    function saveUser() {
+        var id       = document.getElementById('userId').value;
+        var name     = document.getElementById('userName').value.trim();
+        var username = document.getElementById('userUsername').value.trim();
+        var password = document.getElementById('userPassword').value;
+        var roleEl   = document.getElementById('userRole');
+        if (!name || !username) { showAlert('Name and username are required.', 'error'); return; }
+        if (!id && !password)   { showAlert('Password is required for new users.', 'error'); return; }
+        var url  = id ? '/users/edit' : '/users/add';
+        var body = { name: name, username: username };
+        if (id)       body.id       = parseInt(id);
+        if (password) body.password = password;
+        if (roleEl)   body.role     = roleEl.value;
+        fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) { closeUserModal(); showAlert(data.message, 'success'); loadUsers(); }
+                else showAlert(data.error, 'error');
+            });
+    }
+
+    function deleteUser(id, name) {
+        if (!confirm('Delete user "' + name + '"? This cannot be undone.')) return;
+        fetch('/users/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) { showAlert(data.message, 'success'); loadUsers(); }
+                else showAlert(data.error, 'error');
+            });
+    }
+
+    function openPinModal(userId, userName) {
+        currentPin = '';
+        document.getElementById('pinUserId').value    = userId;
+        document.getElementById('pinModalName').textContent = userName;
+        updatePinDots();
+        document.getElementById('pinModal').classList.add('visible');
+    }
+    function closePinModal() { document.getElementById('pinModal').classList.remove('visible'); currentPin = ''; updatePinDots(); }
+    function pinKey(digit) { if (currentPin.length >= 4) return; currentPin += digit; updatePinDots(); }
+    function pinBack()     { currentPin = currentPin.slice(0, -1); updatePinDots(); }
+    function pinClear()    { currentPin = ''; updatePinDots(); }
+    function updatePinDots() {
+        for (var i = 0; i < 4; i++) {
+            var dot = document.getElementById('dot' + i);
+            if (i < currentPin.length) dot.classList.add('filled');
+            else dot.classList.remove('filled');
+        }
+    }
+    function savePin() {
+        if (currentPin.length < 4) { showAlert('Please enter a 4-digit PIN.', 'error'); return; }
+        var userId = document.getElementById('pinUserId').value;
+        fetch('/users/set_pin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: parseInt(userId), pin: currentPin }) })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) { closePinModal(); showAlert(data.message, 'success'); loadUsers(); }
+                else showAlert(data.error, 'error');
+            });
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { closeUserModal(); closePinModal(); }
+    });
+    document.addEventListener('DOMContentLoaded', loadUsers);
+</script>
+</body>
+</html>

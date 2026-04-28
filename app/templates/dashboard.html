@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <script>
+        (function(){
+            var t = localStorage.getItem('prim3pos_theme');
+            if (t) document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+    <title>prim3-POS | Dashboard</title>
+    <style>
+        :root,[data-theme="dark"]{
+            --bg:#0d0d0d;--surface:#1e1e1e;--surface2:#2a2a2a;--surface3:#161616;
+            --border:#2a2a2a;--border2:#333;--text:#fff;--text-muted:#888;--text-dim:#555;
+            --accent:#f5c518;--accent-h:#e6b800;--green:#4ecca3;--red:#cc3333;--blue:#64b5f6;
+            --input-bg:#2a2a2a;--row-hover:#2a2a2a;--shadow:0 4px 24px rgba(0,0,0,.5);
+        }
+        [data-theme="light"]{
+            --bg:#f0f2f5;--surface:#fff;--surface2:#f5f5f5;--surface3:#ebebeb;
+            --border:#e0e0e0;--border2:#d0d0d0;--text:#111;--text-muted:#666;--text-dim:#aaa;
+            --accent:#d4a017;--accent-h:#b8880f;--green:#1a9c72;--red:#b02020;--blue:#1976d2;
+            --input-bg:#f5f5f5;--row-hover:#f5f5f5;--shadow:0 4px 24px rgba(0,0,0,.08);
+        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{background:var(--bg);font-family:Arial,sans-serif;color:var(--text);min-height:100vh;display:flex;transition:background .25s,color .25s;}
+        .sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;position:fixed;height:100vh;transition:background .25s,border-color .25s;}
+        .sidebar-logo{font-size:24px;font-weight:900;color:var(--accent);padding:0 24px 24px;border-bottom:1px solid var(--border);letter-spacing:2px;}
+        .sidebar-logo span{color:var(--text);}
+        .sidebar-nav{flex:1;padding:16px 0;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:12px 24px;color:var(--text-muted);text-decoration:none;font-size:14px;transition:all .2s;border-left:3px solid transparent;}
+        .nav-item:hover{color:var(--text);background:var(--surface2);}
+        .nav-item.active{color:var(--accent);border-left-color:var(--accent);background:var(--surface2);}
+        .nav-icon{font-size:18px;}
+        .sidebar-footer{padding:16px 24px;border-top:1px solid var(--border);}
+        .user-info{font-size:12px;color:var(--text-muted);margin-bottom:12px;}
+        .user-info strong{color:var(--text);display:block;font-size:14px;}
+        .btn-logout{display:block;width:100%;padding:10px;background:var(--surface2);color:var(--red);border:1px solid var(--red);border-radius:8px;text-align:center;text-decoration:none;font-size:13px;font-weight:700;transition:all .2s;}
+        .btn-logout:hover{background:var(--red);color:#fff;}
+        .theme-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+        .theme-label-text{font-size:12px;color:var(--text-muted);}
+        .theme-toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+        .theme-toggle input{opacity:0;width:0;height:0;position:absolute;}
+        .theme-toggle-track{position:absolute;inset:0;border-radius:12px;cursor:pointer;background:var(--surface2);border:1px solid var(--border);transition:background .25s,border-color .25s;}
+        .theme-toggle input:checked+.theme-toggle-track{background:var(--accent);border-color:var(--accent);}
+        .theme-toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text-muted);font-size:9px;display:flex;align-items:center;justify-content:center;transition:transform .25s,background .25s;pointer-events:none;}
+        .theme-toggle input:checked~.theme-toggle-thumb{transform:translateX(20px);background:#0d0d0d;}
+        .main{margin-left:240px;flex:1;padding:32px;}
+        .page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;}
+        .page-title{font-size:24px;font-weight:700;margin-bottom:4px;}
+        .page-subtitle{font-size:13px;color:var(--text-muted);}
+        .stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:32px;}
+        @media(max-width:1100px){.stats-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}}
+        .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;transition:border-color .2s,background .25s;text-decoration:none;color:var(--text);display:block;}
+        .stat-card:hover{border-color:var(--accent);}
+        .stat-icon{font-size:28px;margin-bottom:12px;}
+        .stat-value{font-size:28px;font-weight:800;color:var(--accent);margin-bottom:4px;}
+        .stat-label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+        .section-title{font-size:16px;font-weight:700;margin-bottom:16px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;}
+        .table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:background .25s,border-color .25s;}
+        .table-header{padding:16px 24px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px;}
+        table{width:100%;border-collapse:collapse;}
+        th{padding:12px 24px;text-align:left;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);}
+        td{padding:14px 24px;font-size:14px;border-bottom:1px solid var(--surface3);}
+        tr:last-child td{border-bottom:none;}
+        tr:hover td{background:var(--row-hover);}
+        .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+        .badge-cash{background:#0d1f17;color:#4ecca3;}
+        .badge-gcash{background:#001a3d;color:#64b5f6;}
+        .badge-card{background:#1f0d1f;color:#ce93d8;}
+        [data-theme="light"] .badge-cash{background:#d4f5ec;color:#1a9c72;}
+        [data-theme="light"] .badge-gcash{background:#d4e8fa;color:#1565c0;}
+        [data-theme="light"] .badge-card{background:#f3d4fa;color:#7b1fa2;}
+        .empty-state{padding:40px;text-align:center;color:var(--text-muted);font-size:14px;}
+    </style>
+<base target="_blank">
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-logo">prim3<span>-POS</span></div>
+    <nav class="sidebar-nav">
+        <a href="/dashboard" class="nav-item active" target="_self"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="/pos"       class="nav-item" target="_self"><span class="nav-icon">🛒</span> POS</a>
+        <a href="/orders"    class="nav-item" target="_self"><span class="nav-icon">📋</span> Orders</a>
+        {% if current_user.role in ['admin', 'manager'] %}
+        <a href="/products"  class="nav-item" target="_self"><span class="nav-icon">📦</span> Products</a>
+        <a href="/reports"   class="nav-item" target="_self"><span class="nav-icon">📈</span> Reports</a>
+        <a href="/users"     class="nav-item" target="_self"><span class="nav-icon">👥</span> Users</a>
+        {% endif %}
+    </nav>
+    <div class="sidebar-footer">
+        <div class="theme-row">
+            <span class="theme-label-text" id="themeLabel">🌙 Dark</span>
+            <label class="theme-toggle">
+                <input type="checkbox" id="themeToggle" onchange="toggleTheme(this)"/>
+                <div class="theme-toggle-track"></div>
+                <div class="theme-toggle-thumb" id="themeIcon">🌙</div>
+            </label>
+        </div>
+        <div class="user-info">
+            <strong>{{ current_user.name }}</strong>
+            {{ current_user.role | capitalize }}
+        </div>
+        <a href="/logout" class="btn-logout" target="_self">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="main">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Welcome back, {{ current_user.name }}! 👋</div>
+            <div class="page-subtitle">Here's what's happening today.</div>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value">₱{{ "%.2f"|format(today_sales) }}</div>
+            <div class="stat-label">Today's Sales</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🧾</div>
+            <div class="stat-value">{{ today_transactions }}</div>
+            <div class="stat-label">Transactions Today</div>
+        </div>
+        <a href="/products" class="stat-card" target="_self">
+            <div class="stat-icon">📦</div>
+            <div class="stat-value">{{ total_products }}</div>
+            <div class="stat-label">Total Products</div>
+        </a>
+        <div class="stat-card">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-value" style="color:var(--red);">{{ low_stock }}</div>
+            <div class="stat-label">Low Stock Items</div>
+        </div>
+        <a href="/orders" class="stat-card" target="_self">
+            <div class="stat-icon">📋</div>
+            <div class="stat-value" style="color:var(--green);">{{ active_orders_count }}</div>
+            <div class="stat-label">Active Orders</div>
+        </a>
+    </div>
+
+    <div class="section-title">Recent Sales</div>
+    <div class="table-card">
+        <div class="table-header">🧾 Latest Transactions</div>
+        {% if recent_sales %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Sale ID</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                    <th>Date &amp; Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in recent_sales %}
+                <tr>
+                    <td>#{{ sale.id }}</td>
+                    <td>₱{{ "%.2f"|format(sale.total) }}</td>
+                    <td>
+                        <span class="badge badge-{{ sale.payment_method }}">
+                            {{ sale.payment_method | upper }}
+                        </span>
+                    </td>
+                    <td>{{ sale.timestamp.strftime("%b %d, %Y %I:%M %p") }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">No sales yet today. Open the POS to start selling! 🛒</div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    var THEME_KEY = 'prim3pos_theme';
+    function applyTheme(isDark){
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        document.getElementById('themeLabel').textContent  = isDark ? '🌙 Dark' : '☀️ Light';
+        document.getElementById('themeIcon').textContent   = isDark ? '🌙' : '☀️';
+        document.getElementById('themeToggle').checked     = !isDark;
+        localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+    }
+    function toggleTheme(chk){ applyTheme(!chk.checked); }
+    applyTheme(localStorage.getItem(THEME_KEY) !== 'light');
+</script>
+</body>
+</html>
