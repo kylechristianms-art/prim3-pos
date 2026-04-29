@@ -830,7 +830,7 @@
     var selectedCategory  = null;
     var editingOrderId    = null;
 
-// ── Category hierarchy data (server-rendered) ─────────────────
+    // ── Category hierarchy data (server-rendered) ─────────────────
     var _CAT_DATA = [
         {% for cat in categories %}
         {id: {{ cat.id }}, name: {{ cat.name | tojson }}, parent_id: {{ cat.parent_id | tojson }}}{% if not loop.last %},{% endif %}
@@ -840,12 +840,11 @@
     var _CAT_CHILDREN = {};   // parent_id -> [child objs]
     var _expandedMainCat = null;
 
-
     var PRELOAD_ORDER_ID = {{ load_order_id | tojson }};
 
     // ── INIT ──
     document.addEventListener('DOMContentLoaded', function() {
-        initCategoryFilters();   // ← build hierarchical category buttons
+        initCategoryFilters();
         fetch('/products/addons')
             .then(function(r) { return r.json(); })
             .then(function(data) {
@@ -944,7 +943,6 @@
     function toggleMainCat(catId, btn) {
         var isExpanded = btn.classList.contains('expanded');
 
-        // Collapse all first
         document.querySelectorAll('#mainCatRow .category-btn').forEach(function (b) {
             b.classList.remove('selected', 'expanded');
         });
@@ -954,7 +952,6 @@
         subRow.classList.remove('visible');
 
         if (isExpanded) {
-            // Toggle off → back to All
             _expandedMainCat = null;
             selectedCategory = null;
             document.getElementById('catAll').classList.add('selected');
@@ -962,15 +959,12 @@
             return;
         }
 
-        // Expand
         btn.classList.add('selected', 'expanded');
         _expandedMainCat = catId;
         selectedCategory = String(catId);
 
         var subs = _CAT_CHILDREN[catId] || [];
         if (subs.length > 0) {
-            // No "All" button — show only sub-categories directly
-            // Auto-select the first sub so the row always has one active item
             var firstSelected = false;
             subs.forEach(function (sub) {
                 var subBtn = document.createElement('button');
@@ -1001,13 +995,10 @@
             var catId     = btn.getAttribute('data-category') || '';
             var catMatch;
             if (selectedCategory === null) {
-                // "All" top-level selected
                 catMatch = true;
             } else if (_expandedMainCat !== null && selectedCategory === String(_expandedMainCat)) {
-                // Main cat selected with no subs — show products in this main cat
                 catMatch = catId === String(_expandedMainCat);
             } else {
-                // A specific sub-category is selected
                 catMatch = catId === String(selectedCategory);
             }
             btn.style.display = (nameMatch && catMatch) ? 'block' : 'none';
@@ -1044,6 +1035,17 @@
         document.getElementById('typeTake').classList.toggle('selected', type === 'takeout');
     }
 
+    // ── FIX: Resolve a product's category to its top-level (main) category ──
+    // Addons are assigned to MAIN categories only. If a product is in a sub-category,
+    // we must resolve upward so the addon filter matches correctly.
+    function _getPosMainCatId(catId) {
+        if (!catId) return null;
+        var cat = _CAT_DATA.find(function(c) { return String(c.id) === String(catId); });
+        if (!cat) return null;
+        // If this category has a parent, return the parent (main) ID; otherwise it is already main
+        return cat.parent_id ? String(cat.parent_id) : String(cat.id);
+    }
+
     function openItemModal(id) {
         var item = cart.find(function(i) { return i.id === id; });
         if (!item) return;
@@ -1057,7 +1059,11 @@
         document.getElementById('itemNotes').value            = item.notes   || '';
         document.getElementById('pwdBtn').classList.toggle('active', pwdActive);
         document.getElementById('pwdNote').style.display = pwdActive ? 'block' : 'none';
+
+        // ── FIX: resolve sub-category → main category before filtering addons ──
         var itemCatId = String(item.categoryId || '');
+        var mainCatId = _getPosMainCatId(itemCatId) || itemCatId;
+
         var sel = document.getElementById('addonSelect');
         sel.value = '';
         Array.from(sel.options).forEach(function(opt) {
@@ -1065,8 +1071,10 @@
             var addon = addonCatalog[String(opt.value)];
             if (!addon) return;
             var addonCat = String(addon.category_id || '');
-            opt.style.display = (!addonCat || !itemCatId || addonCat === itemCatId) ? '' : 'none';
+            // Show addon if: addon has no category, product has no category, or main cats match
+            opt.style.display = (!addonCat || !mainCatId || addonCat === mainCatId) ? '' : 'none';
         });
+
         document.getElementById('btnAddAddon').disabled = true;
         renderAddonList();
         document.getElementById('itemModal').classList.add('visible');
@@ -1298,20 +1306,16 @@
     function completeSale() {
         if (!lastSaleData || !lastSaleData.sale_id) { newSale(); return; }
 
-        // Step 1: log the sale completion
         fetch('/orders/complete_sale', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sale_id: lastSaleData.sale_id }) })
         .then(function(r) { return r.json(); })
         .then(function() {
             if (editingOrderId) {
-                // Editing an existing saved order — just mark it completed
                 return fetch('/orders/saved/complete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: editingOrderId })
                 }).then(function(r) { return r.json(); });
             } else {
-                // Direct POS sale (no saved order) — create one and immediately complete it
-                // so it shows up in "Completed Transactions" on the Orders page
                 var cartToSave = cart.map(function(i) {
                     return { id: i.id, name: i.name, price: i.price, qty: i.qty,
                              discount: i.discount || 0, pwdDiscount: i.pwdDiscount || false,
