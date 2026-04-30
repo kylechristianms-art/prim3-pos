@@ -1,0 +1,4 @@
+ID,Label,Subtotal,Discount,Total,Payment,Type,Status,Created At,Void Reason,Void Resolution
+1,sila pres,273.00,0.00,273.00,other,dine_in,COMPLETED,2026-04-30 09:45,,
+2,Sale #22,227.00,0.00,227.00,gcash,dine_in,COMPLETED,2026-04-30 09:48,,
+3,123,198.00,0.00,198.00,gcash,dine_in,VOIDED,2026-04-30 09:49,why not,refund

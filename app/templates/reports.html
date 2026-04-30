@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <script>(function(){var t=localStorage.getItem('prim3pos_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+    <title>prim3-POS | Reports</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <!-- SheetJS (Excel export) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF + AutoTable (PDF export) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        /* ── Theme Variables ── */
+        :root,[data-theme="dark"]{
+            --bg:#0d0d0d;--surface:#1e1e1e;--surface2:#2a2a2a;--surface3:#161616;
+            --border:#2a2a2a;--border2:#333;--text:#fff;--text-muted:#888;--text-dim:#555;
+            --accent:#f5c518;--accent-h:#e6b800;--green:#4ecca3;--red:#cc3333;--blue:#64b5f6;
+            --orange:#f5923e;--purple:#ce93d8;--input-bg:#2a2a2a;--row-hover:#252525;
+            --shadow:0 4px 24px rgba(0,0,0,.5);
+            --ok-bg:#0d1f17;--ok-text:#4ecca3;
+            --low-bg:#1f1a00;--low-text:#f5c518;
+            --out-bg:#1f0d0d;--out-text:#cc3333;
+            --chart-grid:rgba(255,255,255,0.06);
+            --chart-tick:#666;
+        }
+        [data-theme="light"]{
+            --bg:#f0f2f5;--surface:#fff;--surface2:#f5f5f5;--surface3:#ebebeb;
+            --border:#e0e0e0;--border2:#d0d0d0;--text:#111;--text-muted:#666;--text-dim:#aaa;
+            --accent:#d4a017;--accent-h:#b8880f;--green:#1a9c72;--red:#b02020;--blue:#1976d2;
+            --orange:#d4620e;--purple:#7b1fa2;--input-bg:#f5f5f5;--row-hover:#f9f9f9;
+            --shadow:0 4px 24px rgba(0,0,0,.08);
+            --ok-bg:#d4f5ec;--ok-text:#1a9c72;
+            --low-bg:#fff8e0;--low-text:#b8880f;
+            --out-bg:#fff0f0;--out-text:#b02020;
+            --chart-grid:rgba(0,0,0,0.06);
+            --chart-tick:#999;
+        }
+
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{background:var(--bg);font-family:Arial,sans-serif;color:var(--text);min-height:100vh;display:flex;transition:background .25s,color .25s;}
+
+        /* ── Sidebar ── */
+        .sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;position:fixed;height:100vh;transition:background .25s,border-color .25s;z-index:10;}
+        .sidebar-logo{font-size:24px;font-weight:900;color:var(--accent);padding:0 24px 24px;border-bottom:1px solid var(--border);letter-spacing:2px;}
+        .sidebar-logo span{color:var(--text);}
+        .sidebar-nav{flex:1;padding:16px 0;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:12px 24px;color:var(--text-muted);text-decoration:none;font-size:14px;transition:all .2s;border-left:3px solid transparent;}
+        .nav-item:hover{color:var(--text);background:var(--surface2);}
+        .nav-item.active{color:var(--accent);border-left-color:var(--accent);background:var(--surface2);}
+        .nav-icon{font-size:18px;}
+        .sidebar-footer{padding:16px 24px;border-top:1px solid var(--border);}
+        .user-info{font-size:12px;color:var(--text-muted);margin-bottom:12px;}
+        .user-info strong{color:var(--text);display:block;font-size:14px;}
+        .btn-logout{display:block;width:100%;padding:10px;background:var(--surface2);color:var(--red);border:1px solid var(--red);border-radius:8px;text-align:center;text-decoration:none;font-size:13px;font-weight:700;transition:all .2s;}
+        .btn-logout:hover{background:var(--red);color:#fff;}
+        .theme-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+        .theme-label-text{font-size:12px;color:var(--text-muted);}
+        .theme-toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+        .theme-toggle input{opacity:0;width:0;height:0;position:absolute;}
+        .theme-toggle-track{position:absolute;inset:0;border-radius:12px;cursor:pointer;background:var(--surface2);border:1px solid var(--border);transition:background .25s,border-color .25s;}
+        .theme-toggle input:checked+.theme-toggle-track{background:var(--accent);border-color:var(--accent);}
+        .theme-toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text-muted);font-size:9px;display:flex;align-items:center;justify-content:center;transition:transform .25s,background .25s;pointer-events:none;}
+        .theme-toggle input:checked~.theme-toggle-thumb{transform:translateX(20px);background:#0d0d0d;}
+
+        /* ── Main Layout ── */
+        .main{margin-left:240px;flex:1;padding:28px 32px;min-height:100vh;}
+
+        /* ── Page Header ── */
+        .page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;gap:16px;flex-wrap:wrap;}
+        .page-title{font-size:24px;font-weight:700;}
+        .page-subtitle{font-size:13px;color:var(--text-muted);margin-top:4px;}
+        .export-btns{display:flex;gap:8px;flex-shrink:0;}
+        .btn-export{padding:10px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;border:1px solid;}
+        .btn-excel{background:var(--surface2);color:var(--green);border-color:var(--green);}
+        .btn-excel:hover{background:var(--green);color:#000;}
+        .btn-pdf{background:var(--surface2);color:var(--red);border-color:var(--red);}
+        .btn-pdf:hover{background:var(--red);color:#fff;}
+
+        /* ── Date Controls ── */
+        .date-controls{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;transition:background .25s,border-color .25s;}
+        .preset-btns{display:flex;gap:6px;flex-wrap:wrap;}
+        .preset-btn{padding:6px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;}
+        .preset-btn:hover{color:var(--text);border-color:var(--text-dim);}
+        .preset-btn.active{background:var(--accent);color:#000;border-color:var(--accent);}
+        .date-sep{width:1px;height:24px;background:var(--border);flex-shrink:0;}
+        .custom-dates{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+        .date-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+        .date-input{padding:7px 10px;background:var(--input-bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;outline:none;transition:border-color .2s;}
+        .date-input:focus{border-color:var(--accent);}
+        .btn-apply{padding:7px 16px;background:var(--accent);color:#000;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;transition:background .2s;white-space:nowrap;}
+        .btn-apply:hover{background:var(--accent-h);}
+
+        /* ── KPI Cards ── */
+        .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:24px;}
+        .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;transition:border-color .2s,background .25s;}
+        .kpi-card:hover{border-color:var(--border2);}
+        .kpi-icon{font-size:22px;margin-bottom:8px;}
+        .kpi-value{font-size:26px;font-weight:800;margin-bottom:2px;}
+        .kpi-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+        .kpi-sub{font-size:11px;color:var(--text-dim);margin-top:4px;}
+
+        /* ── Tabs ── */
+        .tab-nav{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:24px;flex-wrap:wrap;}
+        .tab-btn{padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-muted);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;margin-bottom:-1px;white-space:nowrap;}
+        .tab-btn:hover{color:var(--text);}
+        .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+        .tab-panel{display:none;}
+        .tab-panel.active{display:block;}
+
+        /* ── Cards / Chart Wrappers ── */
+        .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;transition:background .25s,border-color .25s;}
+        .card-title{font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+        .card-title-text{display:flex;align-items:center;gap:8px;}
+        .chart-wrap{position:relative;width:100%;max-height:320px;}
+        .chart-wrap canvas{max-height:320px;}
+
+        /* ── Grid Layouts ── */
+        .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+        .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+        .col-span-2{grid-column:span 2;}
+        @media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr;}.col-span-2{grid-column:span 1;}}
+
+        /* ── Group-by Toggle ── */
+        .groupby-row{display:flex;gap:4px;}
+        .groupby-btn{padding:4px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;color:var(--text-muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
+        .groupby-btn:hover{color:var(--text);}
+        .groupby-btn.active{background:var(--accent);color:#000;border-color:var(--accent);}
+
+        /* ── Tables ── */
+        .table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);}
+        table{width:100%;border-collapse:collapse;}
+        thead th{padding:11px 14px;text-align:left;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);background:var(--surface3);white-space:nowrap;}
+        tbody td{padding:12px 14px;font-size:13px;border-bottom:1px solid var(--surface3);vertical-align:middle;}
+        tbody tr:last-child td{border-bottom:none;}
+        tbody tr:hover td{background:var(--row-hover);}
+        .num{text-align:right;font-variant-numeric:tabular-nums;}
+        .money{color:var(--accent);font-weight:700;}
+        .void-row td{opacity:.5;}
+
+        /* ── Badges ── */
+        .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;}
+        .badge-cash{background:#0d1f17;color:#4ecca3;}
+        .badge-gcash{background:#001a3d;color:#64b5f6;}
+        .badge-card{background:#1f0d1f;color:#ce93d8;}
+        .badge-other{background:#1f1a00;color:#f5923e;}
+        .badge-void{background:#1f0d0d;color:#cc3333;}
+        .badge-ok{background:var(--ok-bg);color:var(--ok-text);}
+        .badge-low{background:var(--low-bg);color:var(--low-text);}
+        .badge-out{background:var(--out-bg);color:var(--out-text);}
+        [data-theme="light"] .badge-cash{background:#d4f5ec;color:#1a9c72;}
+        [data-theme="light"] .badge-gcash{background:#d4e8fa;color:#1565c0;}
+        [data-theme="light"] .badge-card{background:#f3d4fa;color:#7b1fa2;}
+        [data-theme="light"] .badge-other{background:#fff8e0;color:#b8880f;}
+        [data-theme="light"] .badge-void{background:#fff0f0;color:#b02020;}
+
+        /* ── Pagination ── */
+        .pagination{display:flex;align-items:center;gap:6px;margin-top:14px;flex-wrap:wrap;}
+        .page-btn{padding:6px 11px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
+        .page-btn:hover{color:var(--text);border-color:var(--text-dim);}
+        .page-btn.active{background:var(--accent);color:#000;border-color:var(--accent);}
+        .page-btn:disabled{opacity:.4;cursor:not-allowed;}
+        .page-info{font-size:12px;color:var(--text-muted);}
+
+        /* ── Search bar ── */
+        .search-row{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;}
+        .search-input{flex:1;min-width:200px;padding:9px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;outline:none;transition:border-color .2s;}
+        .search-input:focus{border-color:var(--accent);}
+        .perpage-select{padding:8px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;outline:none;}
+
+        /* ── Loading / Empty ── */
+        .loading-state{padding:40px;text-align:center;color:var(--text-dim);font-size:13px;}
+        .empty-state{padding:40px;text-align:center;color:var(--text-dim);font-size:13px;}
+
+        /* ── Summary Bar (Void / Inventory) ── */
+        .stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+        .stat-pill{flex:1;min-width:120px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;text-align:center;}
+        .stat-pill-val{font-size:24px;font-weight:800;}
+        .stat-pill-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+
+        /* ── Rank badge for top products ── */
+        .rank{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:900;margin-right:6px;background:var(--surface2);}
+        .rank-1{background:var(--accent);color:#000;}
+        .rank-2{background:#bbb;color:#000;}
+        .rank-3{background:#c87533;color:#fff;}
+
+        /* ── Spacer ── */
+        .mb16{margin-bottom:16px;}
+    </style>
+<base target="_blank">
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════════════════ -->
+<div class="sidebar">
+    <div class="sidebar-logo">prim3<span>-POS</span></div>
+    <nav class="sidebar-nav">
+        <a href="/dashboard" class="nav-item" target="_self"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="/pos"       class="nav-item" target="_self"><span class="nav-icon">🛒</span> POS</a>
+        <a href="/orders"    class="nav-item" target="_self"><span class="nav-icon">📋</span> Orders</a>
+        {% if current_user.role in ['admin', 'manager'] %}
+        <a href="/products"  class="nav-item" target="_self"><span class="nav-icon">📦</span> Products</a>
+        <a href="/inventory" class="nav-item" target="_self"><span class="nav-icon">🧪</span> Inventory</a>
+        <a href="/reports"   class="nav-item active" target="_self"><span class="nav-icon">📈</span> Reports</a>
+        <a href="/users"     class="nav-item" target="_self"><span class="nav-icon">👥</span> Users</a>
+        {% endif %}
+    </nav>
+    <div class="sidebar-footer">
+        <div class="theme-row">
+            <span class="theme-label-text" id="themeLabel">🌙 Dark</span>
+            <label class="theme-toggle">
+                <input type="checkbox" id="themeToggle" onchange="toggleTheme(this)"/>
+                <div class="theme-toggle-track"></div>
+                <div class="theme-toggle-thumb" id="themeIcon">🌙</div>
+            </label>
+        </div>
+        <div class="user-info">
+            <strong>{{ current_user.name }}</strong>
+            {{ current_user.role | capitalize }}
+        </div>
+        <a href="/logout" class="btn-logout" target="_self">🚪 Logout</a>
+    </div>
+</div>
+
+<!-- ══ MAIN ═════════════════════════════════════════════════════════ -->
+<div class="main">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <div class="page-title">📈 Reports</div>
+            <div class="page-subtitle" id="reportSubtitle">Loading…</div>
+        </div>
+        <div class="export-btns">
+            <button class="btn-export btn-excel" onclick="exportExcel()">⬇️ Excel</button>
+            <button class="btn-export btn-pdf"   onclick="exportPDF()">⬇️ PDF</button>
+        </div>
+    </div>
+
+    <!-- Date Controls -->
+    <div class="date-controls">
+        <div class="preset-btns">
+            <button class="preset-btn active" data-preset="today"     onclick="setPreset('today',this)">Today</button>
+            <button class="preset-btn"        data-preset="yesterday" onclick="setPreset('yesterday',this)">Yesterday</button>
+            <button class="preset-btn"        data-preset="week"      onclick="setPreset('week',this)">This Week</button>
+            <button class="preset-btn"        data-preset="month"     onclick="setPreset('month',this)">This Month</button>
+            <button class="preset-btn"        data-preset="last_month"onclick="setPreset('last_month',this)">Last Month</button>
+            <button class="preset-btn"        data-preset="30d"       onclick="setPreset('30d',this)">Last 30 Days</button>
+            <button class="preset-btn"        data-preset="90d"       onclick="setPreset('90d',this)">Last 90 Days</button>
+        </div>
+        <div class="date-sep"></div>
+        <div class="custom-dates">
+            <span class="date-label">From</span>
+            <input class="date-input" type="date" id="dateFrom"/>
+            <span class="date-label">To</span>
+            <input class="date-input" type="date" id="dateTo"/>
+            <button class="btn-apply" onclick="applyCustomDates()">Apply</button>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid" id="kpiGrid">
+        <div class="loading-state" style="grid-column:1/-1;">Loading metrics…</div>
+    </div>
+
+    <!-- Tab Nav -->
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('overview',this)">📊 Overview</button>
+        <button class="tab-btn"        onclick="switchTab('products',this)">📦 Products</button>
+        <button class="tab-btn"        onclick="switchTab('staff',this)">👥 Staff</button>
+        <button class="tab-btn"        onclick="switchTab('transactions',this)">🧾 Transactions</button>
+        <button class="tab-btn"        onclick="switchTab('inventory',this)">🧪 Inventory</button>
+    </div>
+
+    <!-- ══ TAB: OVERVIEW ══ -->
+    <div class="tab-panel active" id="tab-overview">
+
+        <!-- Sales Over Time -->
+        <div class="card mb16">
+            <div class="card-title">
+                <div class="card-title-text">📉 Sales Over Time</div>
+                <div class="groupby-row">
+                    <button class="groupby-btn active" data-g="day"   onclick="setGroupBy('day',this)">Day</button>
+                    <button class="groupby-btn"        data-g="week"  onclick="setGroupBy('week',this)">Week</button>
+                    <button class="groupby-btn"        data-g="month" onclick="setGroupBy('month',this)">Month</button>
+                </div>
+            </div>
+            <div class="chart-wrap"><canvas id="chartSalesTime"></canvas></div>
+        </div>
+
+        <div class="grid-2">
+            <!-- Payment Methods -->
+            <div class="card">
+                <div class="card-title"><div class="card-title-text">💳 Payment Methods</div></div>
+                <div class="chart-wrap" style="max-height:260px;"><canvas id="chartPayments"></canvas></div>
+                <div id="paymentLegend" style="margin-top:12px;"></div>
+            </div>
+            <!-- Hourly Sales -->
+            <div class="card">
+                <div class="card-title"><div class="card-title-text">🕐 Busiest Hours</div></div>
+                <div class="chart-wrap"><canvas id="chartHourly"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ TAB: PRODUCTS ══ -->
+    <div class="tab-panel" id="tab-products">
+        <div class="grid-2">
+            <!-- Top Products Chart -->
+            <div class="card">
+                <div class="card-title"><div class="card-title-text">🏆 Top Products (Qty Sold)</div></div>
+                <div class="chart-wrap"><canvas id="chartTopProds"></canvas></div>
+            </div>
+            <!-- Category Sales Chart -->
+            <div class="card">
+                <div class="card-title"><div class="card-title-text">🏷️ Revenue by Category</div></div>
+                <div class="chart-wrap"><canvas id="chartCategories"></canvas></div>
+            </div>
+        </div>
+        <!-- Top Products Table -->
+        <div class="card">
+            <div class="card-title"><div class="card-title-text">📋 Top Products Detail</div></div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th>#</th>
+                        <th>Product</th>
+                        <th class="num">Units Sold</th>
+                        <th class="num">Revenue</th>
+                        <th class="num">Avg Price</th>
+                    </tr></thead>
+                    <tbody id="topProdsTableBody">
+                        <tr><td colspan="5" class="loading-state">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ TAB: STAFF ══ -->
+    <div class="tab-panel" id="tab-staff">
+        <!-- Cashier Performance -->
+        <div class="card mb16">
+            <div class="card-title"><div class="card-title-text">👤 Cashier Performance</div></div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th class="num">Transactions</th>
+                        <th class="num">Revenue</th>
+                        <th class="num">Avg Order</th>
+                        <th class="num">Discounts Given</th>
+                    </tr></thead>
+                    <tbody id="cashierTableBody">
+                        <tr><td colspan="6" class="loading-state">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Void Analysis -->
+        <div class="card">
+            <div class="card-title"><div class="card-title-text">🚫 Void Analysis</div></div>
+            <div class="stat-row" id="voidStats">
+                <div class="loading-state" style="width:100%;">Loading…</div>
+            </div>
+            <div class="table-wrap" id="voidTableWrap" style="display:none;">
+                <table>
+                    <thead><tr>
+                        <th>Order Label</th>
+                        <th>Void Reason</th>
+                        <th>Resolution</th>
+                        <th>Date</th>
+                    </tr></thead>
+                    <tbody id="voidTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ TAB: TRANSACTIONS ══ -->
+    <div class="tab-panel" id="tab-transactions">
+        <div class="card">
+            <div class="card-title"><div class="card-title-text">🧾 Transaction Log</div></div>
+            <div class="search-row">
+                <input class="search-input" type="text" id="txSearch" placeholder="🔍 Search by cashier or payment method…" oninput="txSearchDebounce()"/>
+                <select class="perpage-select" id="txPerPage" onchange="loadTransactions(1)">
+                    <option value="25">25 / page</option>
+                    <option value="50" selected>50 / page</option>
+                    <option value="100">100 / page</option>
+                </select>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th>Sale #</th>
+                        <th>Cashier</th>
+                        <th class="num">Items</th>
+                        <th class="num">Subtotal</th>
+                        <th class="num">Discount</th>
+                        <th class="num">Total</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                        <th>Date & Time</th>
+                    </tr></thead>
+                    <tbody id="txTableBody">
+                        <tr><td colspan="9" class="loading-state">Click the Transactions tab to load…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="txPagination"></div>
+        </div>
+    </div>
+
+    <!-- ══ TAB: INVENTORY ══ -->
+    <div class="tab-panel" id="tab-inventory">
+        <div class="stat-row" id="invStats">
+            <div class="loading-state" style="width:100%;">Loading…</div>
+        </div>
+        <div class="card">
+            <div class="card-title"><div class="card-title-text">⚠️ Low & Out of Stock Items</div></div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th>Ingredient</th>
+                        <th>Unit</th>
+                        <th class="num">Current Stock</th>
+                        <th class="num">Threshold</th>
+                        <th>Status</th>
+                    </tr></thead>
+                    <tbody id="invTableBody">
+                        <tr><td colspan="5" class="loading-state">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /main -->
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════════════════════ */
+var S = {
+    dateFrom: '',
+    dateTo:   '',
+    groupBy:  'day',
+    activeTab: 'overview',
+    txPage:   1,
+    txLoaded: false,
+    invLoaded: false,
+    data: {
+        summary:    null,
+        salesTime:  null,
+        topProds:   null,
+        payments:   null,
+        cashiers:   null,
+        hourly:     null,
+        categories: null,
+        voids:      null,
+        txns:       null,
+        inventory:  null,
+    },
+    charts: {
+        salesTime:  null,
+        topProds:   null,
+        payments:   null,
+        hourly:     null,
+        categories: null,
+    },
+};
+
+/* ════════════════════════════════════════════════════════════════════
+   THEME
+════════════════════════════════════════════════════════════════════ */
+var THEME_KEY = 'prim3pos_theme';
+
+function isDarkMode() {
+    return document.documentElement.getAttribute('data-theme') !== 'light';
+}
+
+function chartTheme() {
+    var dark = isDarkMode();
+    return {
+        tick:     dark ? '#666' : '#999',
+        grid:     dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+        textColor:dark ? '#aaa' : '#555',
+    };
+}
+
+function applyTheme(isDark) {
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    document.getElementById('themeLabel').textContent = isDark ? '🌙 Dark' : '☀️ Light';
+    document.getElementById('themeIcon').textContent  = isDark ? '🌙' : '☀️';
+    document.getElementById('themeToggle').checked    = !isDark;
+    localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+    refreshChartThemes();
+}
+
+function toggleTheme(chk) { applyTheme(!chk.checked); }
+applyTheme(localStorage.getItem(THEME_KEY) !== 'light');
+
+function refreshChartThemes() {
+    var t = chartTheme();
+    Object.values(S.charts).forEach(function(chart) {
+        if (!chart) return;
+        try {
+            var sc = chart.options.scales || {};
+            Object.values(sc).forEach(function(axis) {
+                if (axis.ticks) axis.ticks.color = t.tick;
+                if (axis.grid)  axis.grid.color  = t.grid;
+            });
+            if (chart.options.plugins && chart.options.plugins.legend) {
+                chart.options.plugins.legend.labels.color = t.textColor;
+            }
+            chart.update('none');
+        } catch (e) {}
+    });
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   DATE HELPERS
+════════════════════════════════════════════════════════════════════ */
+function todayStr() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+function offsetDate(days) {
+    var d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+}
+
+function monthStart(offset) {
+    var d = new Date();
+    d.setMonth(d.getMonth() + (offset || 0), 1);
+    return d.toISOString().slice(0, 10);
+}
+
+function monthEnd(offset) {
+    var d = new Date();
+    d.setMonth(d.getMonth() + (offset || 0) + 1, 0);
+    return d.toISOString().slice(0, 10);
+}
+
+function weekStart() {
+    var d = new Date();
+    var day = d.getDay();
+    var diff = (day === 0 ? -6 : 1 - day); // Monday start
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().slice(0, 10);
+}
+
+function setPreset(preset, btn) {
+    document.querySelectorAll('.preset-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+
+    var from, to = todayStr();
+    switch (preset) {
+        case 'today':      from = todayStr();        break;
+        case 'yesterday':  from = offsetDate(-1);  to = from; break;
+        case 'week':       from = weekStart();       break;
+        case 'month':      from = monthStart();    to = monthEnd(); break;
+        case 'last_month': from = monthStart(-1);  to = monthEnd(-1); break;
+        case '30d':        from = offsetDate(-29);   break;
+        case '90d':        from = offsetDate(-89);   break;
+        default:           from = todayStr();
+    }
+
+    S.dateFrom = from;
+    S.dateTo   = to;
+    document.getElementById('dateFrom').value = from;
+    document.getElementById('dateTo').value   = to;
+    loadAll();
+}
+
+function applyCustomDates() {
+    var from = document.getElementById('dateFrom').value;
+    var to   = document.getElementById('dateTo').value;
+    if (!from || !to) { alert('Please select both a start and end date.'); return; }
+    if (from > to)    { alert('Start date cannot be after end date.'); return; }
+    document.querySelectorAll('.preset-btn').forEach(function(b) { b.classList.remove('active'); });
+    S.dateFrom = from;
+    S.dateTo   = to;
+    loadAll();
+}
+
+function qs() { return '?from=' + S.dateFrom + '&to=' + S.dateTo; }
+
+function setGroupBy(g, btn) {
+    S.groupBy = g;
+    document.querySelectorAll('.groupby-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    loadSalesOverTime();
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   FETCH HELPER
+════════════════════════════════════════════════════════════════════ */
+function api(url) {
+    return fetch(url).then(function(r) { return r.json(); });
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   LOAD ALL
+════════════════════════════════════════════════════════════════════ */
+function loadAll() {
+    updateSubtitle();
+    S.txLoaded  = false;
+    S.invLoaded = false;
+    loadSummary();
+    loadSalesOverTime();
+    loadTopProducts();
+    loadPaymentBreakdown();
+    loadCashierPerformance();
+    loadHourly();
+    loadCategoryBreakdown();
+    loadVoidAnalysis();
+    if (S.activeTab === 'transactions') loadTransactions(1);
+    if (S.activeTab === 'inventory')   loadInventory();
+}
+
+function updateSubtitle() {
+    document.getElementById('reportSubtitle').textContent =
+        'Period: ' + S.dateFrom + ' — ' + S.dateTo;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   KPI SUMMARY
+════════════════════════════════════════════════════════════════════ */
+function loadSummary() {
+    document.getElementById('kpiGrid').innerHTML = '<div class="loading-state" style="grid-column:1/-1;">Loading metrics…</div>';
+    api('/reports/summary' + qs()).then(function(res) {
+        if (!res.success) return;
+        S.data.summary = res.data;
+        renderKPI(res.data);
+    });
+}
+
+function renderKPI(d) {
+    var grid = document.getElementById('kpiGrid');
+    grid.innerHTML = [
+        ['💰', fmtMoney(d.total_revenue),  'Total Revenue',    ''],
+        ['🧾', fmtNum(d.transactions),      'Transactions',     ''],
+        ['📊', fmtMoney(d.avg_order),       'Avg Order Value',  ''],
+        ['🏷️', fmtMoney(d.total_discount), 'Discounts Given',  ''],
+        ['📦', fmtNum(d.items_sold),        'Items Sold',       ''],
+        ['🚫', d.void_count + ' (' + d.void_rate + '%)', 'Voids', 'color:var(--red)'],
+    ].map(function(r, i) {
+        return '<div class="kpi-card">' +
+            '<div class="kpi-icon">' + r[0] + '</div>' +
+            '<div class="kpi-value" style="' + (r[3]||'color:var(--accent)') + '">' + r[1] + '</div>' +
+            '<div class="kpi-label">' + r[2] + '</div>' +
+            '</div>';
+    }).join('');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SALES OVER TIME
+════════════════════════════════════════════════════════════════════ */
+function loadSalesOverTime() {
+    api('/reports/sales_over_time' + qs() + '&group=' + S.groupBy).then(function(res) {
+        if (!res.success) return;
+        S.data.salesTime = res.data;
+        renderSalesChart(res.data);
+    });
+}
+
+function renderSalesChart(data) {
+    destroyChart('salesTime');
+    var t      = chartTheme();
+    var labels = data.map(function(d) { return d.period; });
+    var rev    = data.map(function(d) { return d.revenue; });
+    var txns   = data.map(function(d) { return d.transactions; });
+
+    S.charts.salesTime = new Chart(
+        document.getElementById('chartSalesTime').getContext('2d'),
+        {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Revenue (₱)',
+                        data: rev,
+                        borderColor: '#f5c518',
+                        backgroundColor: 'rgba(245,197,24,0.08)',
+                        borderWidth: 2.5,
+                        tension: 0.35,
+                        fill: true,
+                        pointRadius: data.length > 40 ? 0 : 3,
+                        yAxisID: 'yRev',
+                    },
+                    {
+                        label: 'Transactions',
+                        data: txns,
+                        borderColor: '#4ecca3',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        tension: 0.35,
+                        pointRadius: data.length > 40 ? 0 : 3,
+                        yAxisID: 'yTx',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { labels: { color: t.textColor, font: { size: 12 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.dataset.yAxisID === 'yRev'
+                                    ? ' ₱' + ctx.parsed.y.toLocaleString('en-PH', {minimumFractionDigits:2})
+                                    : ' ' + ctx.parsed.y + ' txns';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x:    { ticks: { color: t.tick, maxTicksLimit: 12 }, grid: { color: t.grid } },
+                    yRev: { type: 'linear', position: 'left',  ticks: { color: '#f5c518', callback: function(v){ return '₱' + v.toLocaleString(); } }, grid: { color: t.grid } },
+                    yTx:  { type: 'linear', position: 'right', ticks: { color: '#4ecca3' }, grid: { display: false } },
+                }
+            }
+        }
+    );
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   TOP PRODUCTS
+════════════════════════════════════════════════════════════════════ */
+function loadTopProducts() {
+    api('/reports/top_products' + qs() + '&limit=10').then(function(res) {
+        if (!res.success) return;
+        S.data.topProds = res.data;
+        renderTopProductsChart(res.data);
+        renderTopProductsTable(res.data);
+    });
+}
+
+function renderTopProductsChart(data) {
+    destroyChart('topProds');
+    var t = chartTheme();
+    S.charts.topProds = new Chart(
+        document.getElementById('chartTopProds').getContext('2d'),
+        {
+            type: 'bar',
+            data: {
+                labels: data.map(function(d) { return d.name; }),
+                datasets: [{
+                    label: 'Units Sold',
+                    data:  data.map(function(d) { return d.qty; }),
+                    backgroundColor: '#f5c518',
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: t.tick }, grid: { color: t.grid } },
+                    y: { ticks: { color: t.tick }, grid: { display: false } },
+                }
+            }
+        }
+    );
+}
+
+function renderTopProductsTable(data) {
+    var tbody = document.getElementById('topProdsTableBody');
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No sales in this period.</td></tr>'; return; }
+    tbody.innerHTML = data.map(function(d, i) {
+        var rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+        var avgPrice  = d.qty > 0 ? (d.revenue / d.qty) : 0;
+        return '<tr>' +
+            '<td><span class="rank ' + rankClass + '">' + (i + 1) + '</span></td>' +
+            '<td>' + escHtml(d.name) + '</td>' +
+            '<td class="num">' + fmtNum(d.qty) + '</td>' +
+            '<td class="num money">' + fmtMoney(d.revenue) + '</td>' +
+            '<td class="num">' + fmtMoney(avgPrice) + '</td>' +
+            '</tr>';
+    }).join('');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   PAYMENT BREAKDOWN
+════════════════════════════════════════════════════════════════════ */
+var PAYMENT_COLORS = {
+    cash:  '#4ecca3',
+    gcash: '#64b5f6',
+    card:  '#ce93d8',
+};
+
+function payColor(m) { return PAYMENT_COLORS[m] || '#f5923e'; }
+
+function loadPaymentBreakdown() {
+    api('/reports/payment_breakdown' + qs()).then(function(res) {
+        if (!res.success) return;
+        S.data.payments = res.data;
+        renderPaymentChart(res.data);
+    });
+}
+
+function renderPaymentChart(data) {
+    destroyChart('payments');
+    var t      = chartTheme();
+    var labels = data.map(function(d) { return d.method.toUpperCase(); });
+    var totals = data.map(function(d) { return d.total; });
+    var colors = data.map(function(d) { return payColor(d.method); });
+
+    S.charts.payments = new Chart(
+        document.getElementById('chartPayments').getContext('2d'),
+        {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{ data: totals, backgroundColor: colors, borderWidth: 0, hoverOffset: 6 }]
+            },
+            options: {
+                responsive: true,
+                cutout: '65%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: t.textColor, padding: 12, font: { size: 12 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ' ' + ctx.label + ': ₱' + ctx.parsed.toLocaleString('en-PH', {minimumFractionDigits:2});
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    );
+
+    // Custom legend with count info
+    var legend = document.getElementById('paymentLegend');
+    if (!legend) return;
+    var total = data.reduce(function(s, d) { return s + d.count; }, 0);
+    legend.innerHTML = data.map(function(d) {
+        var pct = total > 0 ? Math.round(d.count / total * 100) : 0;
+        return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px;">' +
+            '<span style="width:10px;height:10px;border-radius:50%;background:' + payColor(d.method) + ';flex-shrink:0;"></span>' +
+            '<span style="flex:1;color:var(--text);">' + d.method.toUpperCase() + '</span>' +
+            '<span style="color:var(--text-muted);">' + fmtNum(d.count) + ' txns (' + pct + '%)</span>' +
+            '<span style="color:var(--accent);font-weight:700;">' + fmtMoney(d.total) + '</span>' +
+            '</div>';
+    }).join('');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   HOURLY
+════════════════════════════════════════════════════════════════════ */
+function loadHourly() {
+    api('/reports/hourly' + qs()).then(function(res) {
+        if (!res.success) return;
+        S.data.hourly = res.data;
+        renderHourlyChart(res.data);
+    });
+}
+
+function renderHourlyChart(data) {
+    destroyChart('hourly');
+    var t    = chartTheme();
+    var max  = Math.max.apply(null, data.map(function(d) { return d.transactions; })) || 1;
+    var colors = data.map(function(d) {
+        var intensity = d.transactions / max;
+        return 'rgba(245,197,24,' + (0.15 + intensity * 0.85).toFixed(2) + ')';
+    });
+
+    S.charts.hourly = new Chart(
+        document.getElementById('chartHourly').getContext('2d'),
+        {
+            type: 'bar',
+            data: {
+                labels: data.map(function(d) { return d.label; }),
+                datasets: [{
+                    label: 'Transactions',
+                    data:  data.map(function(d) { return d.transactions; }),
+                    backgroundColor: colors,
+                    borderRadius: 3,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: t.tick, maxTicksLimit: 12 }, grid: { display: false } },
+                    y: { ticks: { color: t.tick }, grid: { color: t.grid } },
+                }
+            }
+        }
+    );
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   CATEGORY BREAKDOWN
+════════════════════════════════════════════════════════════════════ */
+var CAT_PALETTE = ['#f5c518','#4ecca3','#64b5f6','#f5923e','#ce93d8','#ff6b6b','#a8dadc','#e9c46a','#2a9d8f','#888'];
+
+function loadCategoryBreakdown() {
+    api('/reports/category_sales' + qs()).then(function(res) {
+        if (!res.success) return;
+        S.data.categories = res.data;
+        renderCategoryChart(res.data);
+    });
+}
+
+function renderCategoryChart(data) {
+    destroyChart('categories');
+    var t = chartTheme();
+    S.charts.categories = new Chart(
+        document.getElementById('chartCategories').getContext('2d'),
+        {
+            type: 'bar',
+            data: {
+                labels: data.map(function(d) { return d.category; }),
+                datasets: [{
+                    label: 'Revenue (₱)',
+                    data:  data.map(function(d) { return d.revenue; }),
+                    backgroundColor: data.map(function(d, i) { return d.color || CAT_PALETTE[i % CAT_PALETTE.length]; }),
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: t.tick }, grid: { display: false } },
+                    y: { ticks: { color: t.tick, callback: function(v){ return '₱' + v.toLocaleString(); } }, grid: { color: t.grid } },
+                }
+            }
+        }
+    );
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   CASHIER PERFORMANCE
+════════════════════════════════════════════════════════════════════ */
+function loadCashierPerformance() {
+    api('/reports/cashier_performance' + qs()).then(function(res) {
+        if (!res.success) return;
+        S.data.cashiers = res.data;
+        renderCashierTable(res.data);
+    });
+}
+
+function renderCashierTable(data) {
+    var tbody = document.getElementById('cashierTableBody');
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No data.</td></tr>'; return; }
+    tbody.innerHTML = data.map(function(d) {
+        return '<tr>' +
+            '<td><strong>' + escHtml(d.name) + '</strong></td>' +
+            '<td><span class="badge badge-' + d.role + '" style="text-transform:capitalize;">' + escHtml(d.role) + '</span></td>' +
+            '<td class="num">' + fmtNum(d.transactions) + '</td>' +
+            '<td class="num money">' + fmtMoney(d.revenue) + '</td>' +
+            '<td class="num">' + fmtMoney(d.avg_order) + '</td>' +
+            '<td class="num" style="color:var(--orange);">-' + fmtMoney(d.discounts) + '</td>' +
+            '</tr>';
+    }).join('');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   VOID ANALYSIS
+════════════════════════════════════════════════════════════════════ */
+function loadVoidAnalysis() {
+    api('/reports/void_analysis' + qs()).then(function(res) {
+        if (!res.success) return;
+        S.data.voids = res.data;
+        renderVoidAnalysis(res.data);
+    });
+}
+
+function renderVoidAnalysis(d) {
+    document.getElementById('voidStats').innerHTML =
+        '<div class="stat-pill"><div class="stat-pill-val" style="color:var(--red);">' + d.void_sale_count + '</div><div class="stat-pill-label">Voided Sales</div></div>' +
+        '<div class="stat-pill"><div class="stat-pill-val" style="color:var(--orange);">' + d.void_order_count + '</div><div class="stat-pill-label">Voided Orders</div></div>' +
+        '<div class="stat-pill"><div class="stat-pill-val" style="color:var(--red);">-' + fmtMoney(d.lost_revenue) + '</div><div class="stat-pill-label">Est. Lost Revenue</div></div>';
+
+    if (d.recent_voids && d.recent_voids.length) {
+        document.getElementById('voidTableWrap').style.display = '';
+        document.getElementById('voidTableBody').innerHTML = d.recent_voids.map(function(v) {
+            return '<tr>' +
+                '<td><strong>' + escHtml(v.label) + '</strong></td>' +
+                '<td>' + escHtml(v.reason) + '</td>' +
+                '<td style="color:var(--text-muted);">' + escHtml(v.resolution) + '</td>' +
+                '<td style="font-size:11px;color:var(--text-muted);">' + escHtml(v.created_at) + '</td>' +
+                '</tr>';
+        }).join('');
+    } else {
+        document.getElementById('voidTableWrap').style.display = 'none';
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   TRANSACTIONS
+════════════════════════════════════════════════════════════════════ */
+var _txDebounce = null;
+function txSearchDebounce() {
+    clearTimeout(_txDebounce);
+    _txDebounce = setTimeout(function() { loadTransactions(1); }, 350);
+}
+
+function loadTransactions(page) {
+    S.txPage = page || 1;
+    var perPage = parseInt(document.getElementById('txPerPage').value || 50);
+    var search  = (document.getElementById('txSearch').value || '').trim();
+    var url = '/reports/transactions' + qs() + '&page=' + S.txPage + '&per_page=' + perPage;
+
+    document.getElementById('txTableBody').innerHTML = '<tr><td colspan="9" class="loading-state">Loading…</td></tr>';
+
+    api(url).then(function(res) {
+        if (!res.success) return;
+        S.data.txns = res.data;
+        S.txLoaded  = true;
+        renderTransactionTable(res.data, search);
+        renderPagination(res.data);
+    });
+}
+
+function renderTransactionTable(data, search) {
+    var tbody = document.getElementById('txTableBody');
+    var rows  = data.rows;
+
+    /* Client-side search filter */
+    if (search) {
+        var s = search.toLowerCase();
+        rows = rows.filter(function(r) {
+            return r.cashier.toLowerCase().includes(s) || r.payment.toLowerCase().includes(s);
+        });
+    }
+
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No transactions found.</td></tr>'; return; }
+
+    tbody.innerHTML = rows.map(function(r) {
+        var payClass = 'badge-' + r.payment.toLowerCase().replace(/\s+/g, '');
+        if (!['cash','gcash','card'].includes(r.payment.toLowerCase())) payClass = 'badge-other';
+        return '<tr' + (r.is_void ? ' class="void-row"' : '') + '>' +
+            '<td><strong>#' + r.id + '</strong></td>' +
+            '<td>' + escHtml(r.cashier) + '</td>' +
+            '<td class="num">' + fmtNum(r.items_count) + '</td>' +
+            '<td class="num">' + fmtMoney(r.subtotal) + '</td>' +
+            '<td class="num" style="color:var(--orange);">' + (r.discount > 0 ? '-' + fmtMoney(r.discount) : '—') + '</td>' +
+            '<td class="num money">' + fmtMoney(r.total) + '</td>' +
+            '<td><span class="badge ' + payClass + '">' + escHtml(r.payment).toUpperCase() + '</span></td>' +
+            '<td>' + (r.is_void ? '<span class="badge badge-void">VOID</span>' : '<span class="badge badge-ok">OK</span>') + '</td>' +
+            '<td style="font-size:11px;color:var(--text-muted);white-space:nowrap;">' + escHtml(r.timestamp) + '</td>' +
+            '</tr>';
+    }).join('');
+}
+
+function renderPagination(data) {
+    var pg   = document.getElementById('txPagination');
+    if (data.pages <= 1) { pg.innerHTML = ''; return; }
+
+    var html = '<button class="page-btn" onclick="loadTransactions(' + (data.page - 1) + ')" ' +
+               (data.page <= 1 ? 'disabled' : '') + '>‹ Prev</button>';
+    var start = Math.max(1, data.page - 2);
+    var end   = Math.min(data.pages, data.page + 2);
+    for (var i = start; i <= end; i++) {
+        html += '<button class="page-btn' + (i === data.page ? ' active' : '') + '" onclick="loadTransactions(' + i + ')">' + i + '</button>';
+    }
+    html += '<button class="page-btn" onclick="loadTransactions(' + (data.page + 1) + ')" ' +
+            (data.page >= data.pages ? 'disabled' : '') + '>Next ›</button>';
+    html += '<span class="page-info">Page ' + data.page + ' of ' + data.pages + ' (' + fmtNum(data.total) + ' total)</span>';
+    pg.innerHTML = html;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   INVENTORY STATUS
+════════════════════════════════════════════════════════════════════ */
+function loadInventory() {
+    S.invLoaded = true;
+    api('/reports/inventory_status').then(function(res) {
+        if (!res.success) return;
+        S.data.inventory = res.data;
+        renderInventory(res.data);
+    });
+}
+
+function renderInventory(d) {
+    document.getElementById('invStats').innerHTML =
+        '<div class="stat-pill"><div class="stat-pill-val">' + d.total + '</div><div class="stat-pill-label">Total Ingredients</div></div>' +
+        '<div class="stat-pill"><div class="stat-pill-val" style="color:var(--green);">' + d.ok_count + '</div><div class="stat-pill-label">In Stock</div></div>' +
+        '<div class="stat-pill"><div class="stat-pill-val" style="color:var(--accent);">' + d.low_count + '</div><div class="stat-pill-label">Low Stock</div></div>' +
+        '<div class="stat-pill"><div class="stat-pill-val" style="color:var(--red);">' + d.out_count + '</div><div class="stat-pill-label">Out of Stock</div></div>';
+
+    var tbody = document.getElementById('invTableBody');
+    if (!d.alert_items.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">✅ All ingredients are well-stocked!</td></tr>';
+        return;
+    }
+    tbody.innerHTML = d.alert_items.map(function(i) {
+        var bc = i.status === 'out' ? 'badge-out' : 'badge-low';
+        var bl = i.status === 'out' ? '🚫 Out of Stock' : '⚠️ Low Stock';
+        return '<tr>' +
+            '<td><strong>' + escHtml(i.name) + '</strong></td>' +
+            '<td style="color:var(--text-muted);">' + escHtml(i.unit) + '</td>' +
+            '<td class="num">' + i.qty + '</td>' +
+            '<td class="num" style="color:var(--text-muted);">' + i.threshold + '</td>' +
+            '<td><span class="badge ' + bc + '">' + bl + '</span></td>' +
+            '</tr>';
+    }).join('');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   TAB MANAGEMENT
+════════════════════════════════════════════════════════════════════ */
+function switchTab(name, btn) {
+    S.activeTab = name;
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    var panel = document.getElementById('tab-' + name);
+    if (panel) panel.classList.add('active');
+
+    /* Lazy load */
+    if (name === 'transactions' && !S.txLoaded) loadTransactions(1);
+    if (name === 'inventory'    && !S.invLoaded) loadInventory();
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   EXPORT — EXCEL
+════════════════════════════════════════════════════════════════════ */
+function exportExcel() {
+    if (typeof XLSX === 'undefined') { alert('Excel export library not loaded. Check your internet connection.'); return; }
+
+    var wb = XLSX.utils.book_new();
+
+    /* Sheet 1: Summary */
+    if (S.data.summary) {
+        var d = S.data.summary;
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+            ['prim3-POS Report Summary'],
+            ['Period:', S.dateFrom + ' to ' + S.dateTo],
+            [],
+            ['Metric', 'Value'],
+            ['Total Revenue (₱)', d.total_revenue],
+            ['Transactions',      d.transactions],
+            ['Avg Order Value (₱)',d.avg_order],
+            ['Total Discounts (₱)',d.total_discount],
+            ['Items Sold',        d.items_sold],
+            ['Voids',             d.void_count],
+            ['Void Rate (%)',     d.void_rate],
+        ]), 'Summary');
+    }
+
+    /* Sheet 2: Sales Over Time */
+    if (S.data.salesTime && S.data.salesTime.length) {
+        var rows = [['Period', 'Revenue (₱)', 'Transactions']];
+        S.data.salesTime.forEach(function(r) { rows.push([r.period, r.revenue, r.transactions]); });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Sales Over Time');
+    }
+
+    /* Sheet 3: Top Products */
+    if (S.data.topProds && S.data.topProds.length) {
+        var rows = [['Rank', 'Product', 'Units Sold', 'Revenue (₱)']];
+        S.data.topProds.forEach(function(r, i) { rows.push([i + 1, r.name, r.qty, r.revenue]); });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Top Products');
+    }
+
+    /* Sheet 4: Payment Methods */
+    if (S.data.payments && S.data.payments.length) {
+        var rows = [['Payment Method', 'Transactions', 'Revenue (₱)']];
+        S.data.payments.forEach(function(r) { rows.push([r.method.toUpperCase(), r.count, r.total]); });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Payment Methods');
+    }
+
+    /* Sheet 5: Cashier Performance */
+    if (S.data.cashiers && S.data.cashiers.length) {
+        var rows = [['Cashier', 'Role', 'Transactions', 'Revenue (₱)', 'Avg Order (₱)', 'Discounts (₱)']];
+        S.data.cashiers.forEach(function(r) { rows.push([r.name, r.role, r.transactions, r.revenue, r.avg_order, r.discounts]); });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Cashier Performance');
+    }
+
+    /* Sheet 6: Hourly */
+    if (S.data.hourly && S.data.hourly.length) {
+        var rows = [['Hour', 'Transactions', 'Revenue (₱)']];
+        S.data.hourly.forEach(function(r) { rows.push([r.label, r.transactions, r.revenue]); });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Hourly Breakdown');
+    }
+
+    /* Sheet 7: Category Sales */
+    if (S.data.categories && S.data.categories.length) {
+        var rows = [['Category', 'Units Sold', 'Revenue (₱)']];
+        S.data.categories.forEach(function(r) { rows.push([r.category, r.qty, r.revenue]); });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Category Sales');
+    }
+
+    /* Sheet 8: Transactions (if loaded) */
+    if (S.data.txns && S.data.txns.rows && S.data.txns.rows.length) {
+        var rows = [['Sale #', 'Cashier', 'Items', 'Subtotal (₱)', 'Discount (₱)', 'Total (₱)', 'Payment', 'Status', 'Date']];
+        S.data.txns.rows.forEach(function(r) {
+            rows.push([r.id, r.cashier, r.items_count, r.subtotal, r.discount, r.total, r.payment, r.is_void ? 'VOID' : 'OK', r.timestamp]);
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Transactions');
+    }
+
+    XLSX.writeFile(wb, 'prim3pos_report_' + S.dateFrom + '_to_' + S.dateTo + '.xlsx');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   EXPORT — PDF
+════════════════════════════════════════════════════════════════════ */
+function exportPDF() {
+    if (typeof window.jspdf === 'undefined') { alert('PDF export library not loaded. Check your internet connection.'); return; }
+
+    var jsPDF = window.jspdf.jsPDF;
+    var doc   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    var y     = 18;
+
+    function addTitle(text, size, color) {
+        doc.setFontSize(size || 12);
+        doc.setTextColor.apply(doc, color || [30, 30, 30]);
+        doc.text(text, 14, y);
+        y += (size || 12) * 0.5 + 3;
+    }
+
+    function addGap(n) { y += (n || 8); }
+
+    /* ── Cover ── */
+    doc.setFillColor(13, 13, 13);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setFontSize(20); doc.setTextColor(245, 197, 24);
+    doc.text('prim3-POS', 14, 16);
+    doc.setFontSize(11); doc.setTextColor(170, 170, 170);
+    doc.text('Sales & Performance Report', 14, 24);
+    doc.text('Period: ' + S.dateFrom + '  —  ' + S.dateTo, 14, 31);
+    y = 50;
+
+    /* ── Summary ── */
+    if (S.data.summary) {
+        addTitle('📊 Summary', 13, [0, 0, 0]);
+        var d = S.data.summary;
+        doc.autoTable({
+            startY: y, margin: { left: 14, right: 14 },
+            head: [['Metric', 'Value']],
+            body: [
+                ['Total Revenue',      '₱' + fmtMoney2(d.total_revenue)],
+                ['Transactions',       String(d.transactions)],
+                ['Avg Order Value',    '₱' + fmtMoney2(d.avg_order)],
+                ['Total Discounts',    '₱' + fmtMoney2(d.total_discount)],
+                ['Items Sold',         String(d.items_sold)],
+                ['Void Count',         d.void_count + ' (' + d.void_rate + '%)'],
+            ],
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [245, 197, 24], textColor: [0, 0, 0] },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
+        });
+        y = doc.lastAutoTable.finalY + 10;
+    }
+
+    /* ── Top Products ── */
+    if (S.data.topProds && S.data.topProds.length) {
+        if (y > 220) { doc.addPage(); y = 18; }
+        addTitle('🏆 Top Products', 13, [0, 0, 0]);
+        doc.autoTable({
+            startY: y, margin: { left: 14, right: 14 },
+            head: [['#', 'Product', 'Units Sold', 'Revenue (₱)']],
+            body: S.data.topProds.map(function(r, i) { return [i + 1, r.name, r.qty, fmtMoney2(r.revenue)]; }),
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [78, 204, 163], textColor: [0, 0, 0] },
+            columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } },
+        });
+        y = doc.lastAutoTable.finalY + 10;
+    }
+
+    /* ── Payment Methods ── */
+    if (S.data.payments && S.data.payments.length) {
+        if (y > 220) { doc.addPage(); y = 18; }
+        addTitle('💳 Payment Methods', 13, [0, 0, 0]);
+        doc.autoTable({
+            startY: y, margin: { left: 14, right: 14 },
+            head: [['Method', 'Transactions', 'Revenue (₱)']],
+            body: S.data.payments.map(function(r) { return [r.method.toUpperCase(), r.count, fmtMoney2(r.total)]; }),
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [100, 181, 246], textColor: [0, 0, 0] },
+            columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } },
+        });
+        y = doc.lastAutoTable.finalY + 10;
+    }
+
+    /* ── Cashier Performance ── */
+    if (S.data.cashiers && S.data.cashiers.length) {
+        if (y > 220) { doc.addPage(); y = 18; }
+        addTitle('👤 Cashier Performance', 13, [0, 0, 0]);
+        doc.autoTable({
+            startY: y, margin: { left: 14, right: 14 },
+            head: [['Cashier', 'Transactions', 'Revenue (₱)', 'Avg Order (₱)', 'Discounts (₱)']],
+            body: S.data.cashiers.map(function(r) { return [r.name, r.transactions, fmtMoney2(r.revenue), fmtMoney2(r.avg_order), fmtMoney2(r.discounts)]; }),
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [206, 147, 216], textColor: [0, 0, 0] },
+            columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' } },
+        });
+        y = doc.lastAutoTable.finalY + 10;
+    }
+
+    /* ── Transactions (first 100 if loaded) ── */
+    if (S.data.txns && S.data.txns.rows && S.data.txns.rows.length) {
+        doc.addPage(); y = 18;
+        addTitle('🧾 Transactions (current page)', 13, [0, 0, 0]);
+        doc.autoTable({
+            startY: y, margin: { left: 10, right: 10 },
+            head: [['#', 'Cashier', 'Items', 'Total (₱)', 'Payment', 'Status', 'Date']],
+            body: S.data.txns.rows.slice(0, 100).map(function(r) {
+                return [r.id, r.cashier, r.items_count, fmtMoney2(r.total), r.payment.toUpperCase(), r.is_void ? 'VOID' : 'OK', r.timestamp];
+            }),
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [245, 197, 24], textColor: [0, 0, 0] },
+            columnStyles: { 3: { halign: 'right' } },
+        });
+    }
+
+    /* ── Footer ── */
+    var pageCount = doc.internal.getNumberOfPages();
+    for (var i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8); doc.setTextColor(150);
+        doc.text('prim3-POS Report  |  Generated ' + new Date().toLocaleString() + '  |  Page ' + i + ' of ' + pageCount, 14, 290);
+    }
+
+    doc.save('prim3pos_report_' + S.dateFrom + '_to_' + S.dateTo + '.pdf');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   CHART HELPERS
+════════════════════════════════════════════════════════════════════ */
+function destroyChart(key) {
+    if (S.charts[key]) { try { S.charts[key].destroy(); } catch (e) {} S.charts[key] = null; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   FORMAT HELPERS
+════════════════════════════════════════════════════════════════════ */
+function fmtMoney(n) {
+    return '₱' + parseFloat(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtMoney2(n) {   /* for PDF (no peso sign needed in table) */
+    return parseFloat(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtNum(n) {
+    return parseInt(n || 0).toLocaleString('en-PH');
+}
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function() {
+    /* Default: today */
+    setPreset('today', document.querySelector('[data-preset="today"]'));
+});
+</script>
+</body>
+</html>
