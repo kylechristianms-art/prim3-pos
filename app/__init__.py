@@ -30,13 +30,14 @@ def create_app():
         return db.session.get(User, int(user_id))
 
     # ── Blueprints ────────────────────────────────────
-    from app.routes.auth_routes import auth_bp
-    from app.routes.pos_routes import pos_bp
-    from app.routes.orders_routes import orders_bp
-    from app.routes.products_routes import products_bp
-    from app.routes.users_routes import users_bp
-    from app.routes.reports_routes import reports_bp
-    from app.routes.print_routes import print_bp
+    from app.routes.auth_routes      import auth_bp
+    from app.routes.pos_routes       import pos_bp
+    from app.routes.orders_routes    import orders_bp
+    from app.routes.products_routes  import products_bp
+    from app.routes.users_routes     import users_bp
+    from app.routes.reports_routes   import reports_bp
+    from app.routes.print_routes     import print_bp
+    from app.routes.inventory_routes import inventory_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(pos_bp)
@@ -45,6 +46,7 @@ def create_app():
     app.register_blueprint(users_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(print_bp)
+    app.register_blueprint(inventory_bp)
 
     # ── Root redirect ─────────────────────────────────
     @app.route("/")
@@ -66,18 +68,18 @@ def _migrate_existing_db():
     import sqlalchemy as sa
 
     migrations = [
-        ("users",         "pin",          "VARCHAR(10)"),
-        ("categories",    "color",        "VARCHAR(20) DEFAULT '#f5c518'"),
-        ("categories",    "parent_id",    "INTEGER"),
-        ("saved_printers","printer_type", "VARCHAR(20) DEFAULT 'receipt'"),
+        ("users",          "pin",          "VARCHAR(10)"),
+        ("categories",     "color",        "VARCHAR(20) DEFAULT '#f5c518'"),
+        ("categories",     "parent_id",    "INTEGER"),
+        ("saved_printers", "printer_type", "VARCHAR(20) DEFAULT 'receipt'"),
     ]
 
     with db.engine.connect() as conn:
         for table, column, col_type in migrations:
             try:
                 rows = conn.execute(sa.text(f"PRAGMA table_info({table})")).fetchall()
-                existing_cols = [row[1] for row in rows]
-                if column not in existing_cols:
+                existing = [row[1] for row in rows]
+                if column not in existing:
                     conn.execute(sa.text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
                     conn.commit()
                     print(f"[migration] Added column '{column}' to '{table}'")
@@ -90,13 +92,12 @@ def _seed_defaults():
     from database import ReceiptCounter
 
     if not User.query.filter_by(username="admin").first():
-        admin = User(
+        db.session.add(User(
             name="Administrator",
             username="admin",
             password=generate_password_hash("admin123"),
             role="admin",
-        )
-        db.session.add(admin)
+        ))
 
     if not ReceiptCounter.query.first():
         db.session.add(ReceiptCounter(current_number=1))

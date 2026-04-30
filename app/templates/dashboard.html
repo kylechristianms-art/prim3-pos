@@ -86,6 +86,7 @@
         <a href="/orders"    class="nav-item" target="_self"><span class="nav-icon">📋</span> Orders</a>
         {% if current_user.role in ['admin', 'manager'] %}
         <a href="/products"  class="nav-item" target="_self"><span class="nav-icon">📦</span> Products</a>
+        <a href="/inventory" class="nav-item" target="_self"><span class="nav-icon">🧪</span> Inventory</a>
         <a href="/reports"   class="nav-item" target="_self"><span class="nav-icon">📈</span> Reports</a>
         <a href="/users"     class="nav-item" target="_self"><span class="nav-icon">👥</span> Users</a>
         {% endif %}

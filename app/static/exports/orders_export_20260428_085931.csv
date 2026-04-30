@@ -1,3 +1,0 @@
-ID,Label,Subtotal,Discount,Total,Payment,Type,Status,Created At,Void Reason,Void Resolution
-1,Test Order,159.00,0.00,159.00,gcash,dine_in,VOIDED,2026-04-28 08:28,weryukl,
-2,wsertyu,795.00,0.00,795.00,card,takeout,VOIDED,2026-04-28 08:35,23456uio,

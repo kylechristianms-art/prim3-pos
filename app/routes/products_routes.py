@@ -64,7 +64,8 @@ def add_product():
     )
     db.session.add(product)
     db.session.commit()
-    return jsonify({"success": True, "message": f"Product '{product.name}' added."})
+    # Return id so caller can immediately set ingredients
+    return jsonify({"success": True, "message": f"Product '{product.name}' added.", "id": product.id})
 
 
 @products_bp.route("/products/edit", methods=["POST"])
@@ -75,7 +76,7 @@ def edit_product():
 
     # ── Multipart (photo upload) ──────────────────────────────────
     if request.content_type and "multipart/form-data" in request.content_type:
-        pid = request.form.get("id")
+        pid     = request.form.get("id")
         product = db.session.get(Product, int(pid)) if pid else None
         if not product:
             return jsonify({"success": False, "error": "Product not found"})
@@ -83,12 +84,12 @@ def edit_product():
         product.name     = request.form.get("name", product.name).strip()
         product.price    = float(request.form.get("price", product.price))
         product.quantity = int(request.form.get("quantity", product.quantity))
-        cat_id = request.form.get("category_id")
+        cat_id           = request.form.get("category_id")
         product.category_id = int(cat_id) if cat_id else None
 
         photo = request.files.get("photo")
         if photo and photo.filename and allowed_file(photo.filename):
-            filename     = secure_filename(f"product_{product.id}_{photo.filename}")
+            filename      = secure_filename(f"product_{product.id}_{photo.filename}")
             upload_folder = os.path.abspath(
                 os.path.join(current_app.root_path, "static", "product_photos")
             )
@@ -97,10 +98,10 @@ def edit_product():
             product.photo = filename
 
         db.session.commit()
-        return jsonify({"success": True, "message": f"Product '{product.name}' updated."})
+        return jsonify({"success": True, "message": f"Product '{product.name}' updated.", "id": product.id})
 
     # ── JSON (no photo) ───────────────────────────────────────────
-    data = request.get_json()
+    data    = request.get_json()
     product = db.session.get(Product, data.get("id"))
     if not product:
         return jsonify({"success": False, "error": "Product not found"})
@@ -108,14 +109,14 @@ def edit_product():
     product.name     = data.get("name", product.name).strip()
     product.price    = float(data.get("price", product.price))
     product.quantity = int(data.get("quantity", product.quantity))
-    cat_id = data.get("category_id")
+    cat_id           = data.get("category_id")
     product.category_id = int(cat_id) if cat_id else None
 
     if data.get("remove_photo"):
         product.photo = None
 
     db.session.commit()
-    return jsonify({"success": True, "message": f"Product '{product.name}' updated."})
+    return jsonify({"success": True, "message": f"Product '{product.name}' updated.", "id": product.id})
 
 
 @products_bp.route("/products/delete", methods=["POST"])
@@ -189,9 +190,7 @@ def delete_category():
     cat  = db.session.get(Category, data.get("id"))
     if not cat:
         return jsonify({"success": False, "error": "Category not found"})
-    # Promote sub-categories to top-level
     Category.query.filter_by(parent_id=cat.id).update({"parent_id": None})
-    # Uncategorize affected products
     Product.query.filter_by(category_id=cat.id).update({"category_id": None})
     db.session.delete(cat)
     db.session.commit()
@@ -199,7 +198,6 @@ def delete_category():
 
 
 # ── Add-Ons ───────────────────────────────────────────────────────
-# Both URLs resolve to the same handler so pos.html and products.html both work
 @products_bp.route("/get_addons")
 @products_bp.route("/products/addons")
 @login_required

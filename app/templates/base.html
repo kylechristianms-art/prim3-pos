@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}prim3-POS{% endblock %}</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: #0d0d0d;
+            color: white;
+        }
+
+        .sidebar {
+            width: 220px;
+            position: fixed;
+            height: 100vh;
+            background: #1e1e1e;
+            padding: 20px;
+        }
+
+        .main {
+            margin-left: 240px;
+            padding: 20px;
+        }
+
+        a {
+            color: #f5c518;
+            display: block;
+            margin-bottom: 10px;
+            text-decoration: none;
+        }
+
+        .btn-logout {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+{% block content %}{% endblock %}
+
+</body>
+</html>

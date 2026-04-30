@@ -8,18 +8,19 @@ from database import db, Sale, SaleItem, Product, SavedOrder, User
 from app.services.order_service import calculate_total, normalize_cart, serialize_order
 from app.services.payment_service import calculate_change
 from app.services.audit_service import log_action
+from app.services.inventory_service import deduct_for_sale
 from datetime import datetime
 
 orders_bp = Blueprint("orders", __name__)
 
 
-# ── Checkout ──────────────────────────────────────────────────────
+# ── Checkout ──────────────────────────────────────────────────────────
 @orders_bp.route("/orders/checkout", methods=["POST"])
 @login_required
 def checkout():
     try:
-        data = request.get_json()
-        cart = data.get("cart", [])
+        data   = request.get_json()
+        cart   = data.get("cart", [])
         if not cart:
             return jsonify({"success": False, "error": "Cart is empty"})
 
@@ -48,12 +49,17 @@ def checkout():
                 quantity=item["qty"],
                 price=item["price"],
             ))
+            # Deduct product-level stock
             product = db.session.get(Product, item["id"])
             if product:
                 product.quantity = max(0, product.quantity - item["qty"])
 
         db.session.commit()
-        log_action(current_user.id, "CHECKOUT", f"Sale #{sale.id} total P{total}")
+
+        # ── Deduct ingredient-level stock ─────────────────────────
+        deduct_for_sale(cart, current_user.id)
+
+        log_action(current_user.id, "CHECKOUT", f"Sale #{sale.id} total ₱{total}")
 
         now = datetime.utcnow()
         return jsonify({
@@ -79,15 +85,15 @@ def checkout():
 @login_required
 def complete_sale():
     try:
-        data = request.get_json() or {}
+        data    = request.get_json() or {}
         sale_id = data.get("sale_id")
         if sale_id:
             sale = db.session.get(Sale, sale_id)
             if sale:
                 log_action(current_user.id, "COMPLETE_SALE", f"Sale #{sale.id}")
         return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": True})  # always succeed so UI can reset
+    except Exception:
+        return jsonify({"success": True})
 
 
 # ── Void a direct Sale record ──────────────────────────────────────
@@ -104,7 +110,7 @@ def void_sale():
     return jsonify({"success": True})
 
 
-# ── List all saved orders (TWO URL aliases) ────────────────────────
+# ── List all saved orders ──────────────────────────────────────────
 @orders_bp.route("/saved_orders")
 @orders_bp.route("/orders/saved")
 @login_required
@@ -215,12 +221,10 @@ def verify_pin():
     return jsonify({"success": False, "error": "Invalid PIN or insufficient role"})
 
 
-# ── Export to CSV then clear old completed/voided orders ──────────
+# ── Export to CSV then clear completed/voided orders ──────────────
 @orders_bp.route("/saved_orders/clear", methods=["POST"])
 @login_required
 def clear_orders():
-    # Get ALL completed or voided orders (removed the 24-hour cutoff that was
-    # preventing the button from working when orders were recent)
     orders_to_clear = SavedOrder.query.filter(
         (SavedOrder.is_completed == True) | (SavedOrder.is_void == True)
     ).all()
@@ -228,7 +232,6 @@ def clear_orders():
     if not orders_to_clear:
         return jsonify({"success": True, "message": "No completed or voided orders to clear.", "deleted": 0})
 
-    # ── Build CSV ─────────────────────────────────────────────────
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
@@ -245,27 +248,19 @@ def clear_orders():
             subtotal = disc = total = 0
         status = "VOIDED" if o.is_void else "COMPLETED"
         writer.writerow([
-            o.id,
-            o.label,
-            f"{subtotal:.2f}",
-            f"{disc:.2f}",
-            f"{total:.2f}",
-            o.payment_method or "cash",
-            o.order_type or "dine_in",
-            status,
-            o.created_at.strftime("%Y-%m-%d %H:%M"),
-            o.void_reason or "",
-            o.void_resolution or "",
+            o.id, o.label,
+            f"{subtotal:.2f}", f"{disc:.2f}", f"{total:.2f}",
+            o.payment_method or "cash", o.order_type or "dine_in",
+            status, o.created_at.strftime("%Y-%m-%d %H:%M"),
+            o.void_reason or "", o.void_resolution or "",
         ])
 
-    # ── Save CSV to static/exports/ ───────────────────────────────
     filename   = f"orders_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
     export_dir = os.path.join(current_app.root_path, "static", "exports")
     os.makedirs(export_dir, exist_ok=True)
     with open(os.path.join(export_dir, filename), "w", newline="", encoding="utf-8") as f:
         f.write(output.getvalue())
 
-    # ── Delete from DB ────────────────────────────────────────────
     deleted_count = len(orders_to_clear)
     for o in orders_to_clear:
         db.session.delete(o)

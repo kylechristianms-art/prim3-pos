@@ -6,32 +6,33 @@
     <title>prim3-POS | Products</title>
     <style>
         /* ── Product Filter Bar ── */
-.filter-bar-row {
-    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 11px 16px; margin-bottom: 16px;
-    transition: background .25s, border-color .25s;
-}
-.filter-group { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-.filter-label {
-    font-size: 10px; color: var(--text-muted); text-transform: uppercase;
-    letter-spacing: 1px; white-space: nowrap; margin-right: 2px;
-}
-.filter-btn {
-    padding: 5px 11px; background: var(--surface2); border: 1px solid var(--border2);
-    border-radius: 6px; color: var(--text-muted); font-size: 11px; font-weight: 700;
-    cursor: pointer; transition: all .15s; white-space: nowrap;
-}
-.filter-btn:hover { border-color: var(--text-dim); color: var(--text); }
-.filter-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
-.filter-btn.active-green { background: var(--green); color: #000; border-color: var(--green); }
-.filter-select-sm {
-    padding: 5px 10px; background: var(--surface2); border: 1px solid var(--border2);
-    border-radius: 6px; color: var(--text); font-size: 11px; outline: none; cursor: pointer;
-    transition: background .25s;
-}
-.filter-select-sm:focus { border-color: var(--accent); }
-.filter-divider { width: 1px; height: 22px; background: var(--border); align-self: center; }
+        .filter-bar-row {
+            display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 10px; padding: 11px 16px; margin-bottom: 16px;
+            transition: background .25s, border-color .25s;
+        }
+        .filter-group { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+        .filter-label {
+            font-size: 10px; color: var(--text-muted); text-transform: uppercase;
+            letter-spacing: 1px; white-space: nowrap; margin-right: 2px;
+        }
+        .filter-btn {
+            padding: 5px 11px; background: var(--surface2); border: 1px solid var(--border2);
+            border-radius: 6px; color: var(--text-muted); font-size: 11px; font-weight: 700;
+            cursor: pointer; transition: all .15s; white-space: nowrap;
+        }
+        .filter-btn:hover { border-color: var(--text-dim); color: var(--text); }
+        .filter-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+        .filter-btn.active-green { background: var(--green); color: #000; border-color: var(--green); }
+        .filter-select-sm {
+            padding: 5px 10px; background: var(--surface2); border: 1px solid var(--border2);
+            border-radius: 6px; color: var(--text); font-size: 11px; outline: none; cursor: pointer;
+            transition: background .25s;
+        }
+        .filter-select-sm:focus { border-color: var(--accent); }
+        .filter-divider { width: 1px; height: 22px; background: var(--border); align-self: center; }
+
         :root,[data-theme="dark"]{
             --bg:#0d0d0d;--surface:#1e1e1e;--surface2:#2a2a2a;--surface3:#161616;
             --border:#2a2a2a;--border2:#333;--text:#fff;--text-muted:#888;--text-dim:#555;
@@ -52,25 +53,15 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: var(--bg);
-            font-family: Arial, sans-serif;
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            transition: background .25s, color .25s;
+            background: var(--bg); font-family: Arial, sans-serif; color: var(--text);
+            min-height: 100vh; display: flex; transition: background .25s, color .25s;
         }
 
         /* ── Sidebar ── */
         .sidebar {
-            width: 240px;
-            background: var(--surface);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            padding: 24px 0;
-            position: fixed;
-            height: 100vh;
-            transition: background .25s, border-color .25s;
+            width: 240px; background: var(--surface); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; padding: 24px 0;
+            position: fixed; height: 100vh; transition: background .25s, border-color .25s;
         }
         .sidebar-logo {
             font-size: 24px; font-weight: 900; color: var(--accent);
@@ -79,8 +70,8 @@
         .sidebar-logo span { color: var(--text); }
         .sidebar-nav { flex: 1; padding: 16px 0; }
         .nav-item {
-            display: flex; align-items: center; gap: 12px;
-            padding: 12px 24px; color: var(--text-muted); text-decoration: none; font-size: 14px;
+            display: flex; align-items: center; gap: 12px; padding: 12px 24px;
+            color: var(--text-muted); text-decoration: none; font-size: 14px;
             transition: all 0.2s; border-left: 3px solid transparent;
         }
         .nav-item:hover { color: var(--text); background: var(--surface2); }
@@ -90,38 +81,31 @@
         .user-info { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
         .user-info strong { color: var(--text); display: block; font-size: 14px; }
         .btn-logout {
-            display: block; width: 100%; padding: 10px;
-            background: var(--surface2); color: var(--red); border: 1px solid var(--red);
-            border-radius: 8px; text-align: center; text-decoration: none;
-            font-size: 13px; font-weight: 700; transition: all 0.2s;
+            display: block; width: 100%; padding: 10px; background: var(--surface2);
+            color: var(--red); border: 1px solid var(--red); border-radius: 8px;
+            text-align: center; text-decoration: none; font-size: 13px; font-weight: 700; transition: all 0.2s;
         }
         .btn-logout:hover { background: var(--red); color: white; }
-
-        /* ── Theme toggle in sidebar ── */
         .theme-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .theme-label-text { font-size: 12px; color: var(--text-muted); }
         .theme-toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
         .theme-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
         .theme-toggle-track {
             position: absolute; inset: 0; border-radius: 12px; cursor: pointer;
-            background: var(--surface2); border: 1px solid var(--border);
-            transition: background .25s, border-color .25s;
+            background: var(--surface2); border: 1px solid var(--border); transition: background .25s, border-color .25s;
         }
         .theme-toggle input:checked + .theme-toggle-track { background: var(--accent); border-color: var(--accent); }
         .theme-toggle-thumb {
-            position: absolute; top: 3px; left: 3px;
-            width: 16px; height: 16px; border-radius: 50%;
-            background: var(--text-muted); font-size: 9px;
-            display: flex; align-items: center; justify-content: center;
-            transition: transform .25s, background .25s; pointer-events: none;
+            position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+            background: var(--text-muted); font-size: 9px; display: flex; align-items: center;
+            justify-content: center; transition: transform .25s, background .25s; pointer-events: none;
         }
         .theme-toggle input:checked ~ .theme-toggle-thumb { transform: translateX(20px); background: #0d0d0d; }
 
         /* ── Main ── */
         .main { margin-left: 240px; flex: 1; padding: 32px; }
         .page-header {
-            display: flex; justify-content: space-between;
-            align-items: center; margin-bottom: 24px;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
         }
         .page-title { font-size: 24px; font-weight: 700; }
         .page-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
@@ -139,10 +123,8 @@
         }
         [data-theme="dark"] .btn-add-category:hover { background: #0d1f17; }
         [data-theme="light"] .btn-add-category:hover { background: #e8faf5; }
-
         .search-bar {
-            width: 100%; padding: 10px 16px;
-            background: var(--surface); border: 1px solid var(--border);
+            width: 100%; padding: 10px 16px; background: var(--surface); border: 1px solid var(--border);
             border-radius: 8px; color: var(--text); font-size: 14px; outline: none; margin-bottom: 16px;
             transition: border-color .2s, background .25s;
         }
@@ -152,27 +134,23 @@
         /* ── Table ── */
         .table-card {
             background: var(--surface); border: 1px solid var(--border);
-            border-radius: 12px; overflow: hidden;
-            transition: background .25s, border-color .25s;
+            border-radius: 12px; overflow: hidden; transition: background .25s, border-color .25s;
         }
         table { width: 100%; border-collapse: collapse; }
         th {
             padding: 14px 20px; text-align: left; font-size: 11px; color: var(--text-muted);
             text-transform: uppercase; letter-spacing: 1px;
-            border-bottom: 1px solid var(--border); background: var(--surface3);
-            transition: background .25s;
+            border-bottom: 1px solid var(--border); background: var(--surface3); transition: background .25s;
         }
         td {
             padding: 14px 20px; font-size: 14px;
-            border-bottom: 1px solid var(--surface3); vertical-align: middle;
-            transition: background .25s;
+            border-bottom: 1px solid var(--surface3); vertical-align: middle; transition: background .25s;
         }
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: var(--row-hover); }
         .product-thumb {
             width: 40px; height: 40px; border-radius: 6px;
-            object-fit: cover; background: var(--surface2);
-            border: 1px solid var(--border2);
+            object-fit: cover; background: var(--surface2); border: 1px solid var(--border2);
         }
 
         /* ── Stock badges ── */
@@ -204,14 +182,8 @@
 
         /* ── Alerts ── */
         .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; }
-        .alert-success {
-            background: var(--stock-ok-bg); border: 1px solid var(--green);
-            color: var(--green); display: block;
-        }
-        .alert-error {
-            background: var(--stock-out-bg); border: 1px solid var(--red);
-            color: var(--red); display: block;
-        }
+        .alert-success { background: var(--stock-ok-bg); border: 1px solid var(--green); color: var(--green); display: block; }
+        .alert-error   { background: var(--stock-out-bg); border: 1px solid var(--red);   color: var(--red);   display: block; }
 
         /* ── Section divider ── */
         .section-divider {
@@ -222,12 +194,12 @@
 
         /* ── Categories tree ── */
         .categories-tree { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-        .category-group { display: flex; flex-direction: column; gap: 6px; }
+        .category-group  { display: flex; flex-direction: column; gap: 6px; }
         .category-card {
             background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
             padding: 14px 18px; display: flex; justify-content: space-between;
-            align-items: center; transition: border-color 0.2s, background .25s; cursor: pointer;
-            user-select: none;
+            align-items: center; transition: border-color 0.2s, background .25s;
+            cursor: pointer; user-select: none;
         }
         .category-card:hover { border-color: var(--border2); }
         .category-card-toggle { font-size: 11px; color: var(--text-dim); transition: transform 0.2s; margin-right: 8px; }
@@ -242,7 +214,7 @@
         }
         .sub-category-card:hover { border-color: var(--border2); }
         .category-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; margin-right: 8px; flex-shrink: 0; }
-        .category-name { font-size: 14px; font-weight: 700; display: flex; align-items: center; }
+        .category-name     { font-size: 14px; font-weight: 700; display: flex; align-items: center; }
         .sub-category-name { font-size: 13px; font-weight: 600; display: flex; align-items: center; color: var(--text-muted); }
         .category-actions { display: flex; gap: 6px; align-items: center; }
         .btn-add-sub {
@@ -268,11 +240,9 @@
         [data-theme="light"] .btn-add-addon-main:hover { background: #fff8e0; }
         .addon-group { margin-bottom: 14px; }
         .addon-group-header {
-            display: flex; align-items: center; gap: 8px;
-            font-size: 12px; font-weight: 700; color: var(--text-muted);
-            text-transform: uppercase; letter-spacing: 1px;
-            margin-bottom: 6px; padding: 0 4px;
-            cursor: pointer; user-select: none;
+            display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
+            color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 6px; padding: 0 4px; cursor: pointer; user-select: none;
         }
         .addon-group-header .caret { font-size: 9px; transition: transform 0.2s; }
         .addon-group-header.collapsed .caret { transform: rotate(-90deg); }
@@ -284,7 +254,7 @@
             align-items: center; transition: border-color 0.2s, background .25s;
         }
         .addon-card:hover { border-color: var(--border2); }
-        .addon-card-name { font-size: 13px; font-weight: 600; }
+        .addon-card-name  { font-size: 13px; font-weight: 600; }
         .addon-card-price { font-size: 13px; color: var(--accent); font-weight: 700; margin-left: auto; margin-right: 12px; }
         .btn-delete-addon {
             padding: 3px 9px; background: transparent; color: var(--text-dim); border: 1px solid var(--border2);
@@ -292,7 +262,7 @@
         }
         .btn-delete-addon:hover { color: var(--red); border-color: var(--red); }
 
-        /* ── MODAL base ── */
+        /* ── Modal base ── */
         .modal-overlay {
             display: none; position: fixed; inset: 0;
             background: rgba(0,0,0,0.8); z-index: 100;
@@ -302,8 +272,7 @@
         .modal {
             background: var(--surface); border: 1px solid var(--border);
             border-radius: 12px; padding: 32px; width: 100%; max-width: 460px;
-            max-height: 90vh; overflow-y: auto;
-            transition: background .25s, border-color .25s;
+            max-height: 90vh; overflow-y: auto; transition: background .25s, border-color .25s;
         }
         .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 24px; }
         .form-group { margin-bottom: 16px; }
@@ -312,25 +281,22 @@
             text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
         }
         .form-input {
-            width: 100%; padding: 12px 16px;
-            background: var(--input-bg); border: 1px solid var(--border2);
+            width: 100%; padding: 12px 16px; background: var(--input-bg); border: 1px solid var(--border2);
             border-radius: 8px; color: var(--text); font-size: 14px; outline: none;
             transition: border-color 0.2s, background .25s;
         }
         .form-input:focus { border-color: var(--accent); }
         .form-select {
-            width: 100%; padding: 12px 16px;
-            background: var(--input-bg); border: 1px solid var(--border2);
-            border-radius: 8px; color: var(--text); font-size: 14px; outline: none;
-            transition: background .25s;
+            width: 100%; padding: 12px 16px; background: var(--input-bg); border: 1px solid var(--border2);
+            border-radius: 8px; color: var(--text); font-size: 14px; outline: none; transition: background .25s;
         }
         .form-select:focus { border-color: var(--accent); }
 
-        /* ── Photo Upload ── */
+        /* ── Photo upload ── */
         .photo-upload-area {
-            width: 100%; border: 2px dashed var(--border2); border-radius: 8px;
-            padding: 16px; text-align: center; cursor: pointer;
-            transition: border-color 0.2s, background .25s; position: relative; background: var(--surface2);
+            width: 100%; border: 2px dashed var(--border2); border-radius: 8px; padding: 16px;
+            text-align: center; cursor: pointer; transition: border-color 0.2s, background .25s;
+            position: relative; background: var(--surface2);
         }
         .photo-upload-area:hover { border-color: var(--accent); }
         .photo-upload-area input[type="file"] {
@@ -338,18 +304,16 @@
         }
         .photo-preview-wrap { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
         .photo-preview {
-            width: 64px; height: 64px; border-radius: 8px;
-            object-fit: cover; border: 1px solid var(--border2); background: var(--surface);
-            flex-shrink: 0;
+            width: 64px; height: 64px; border-radius: 8px; object-fit: cover;
+            border: 1px solid var(--border2); background: var(--surface); flex-shrink: 0;
         }
         .photo-upload-label { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
         .photo-upload-label strong { color: var(--accent); }
-
         .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
         .btn-save {
             flex: 1; padding: 12px; background: var(--accent); color: #000;
-            border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
-            transition: background .2s;
+            border: none; border-radius: 8px; font-size: 14px; font-weight: 700;
+            cursor: pointer; transition: background .2s;
         }
         .btn-save:hover { background: var(--accent-h); }
         .btn-cancel {
@@ -379,6 +343,38 @@
             border-radius: 12px; padding: 32px; width: 100%; max-width: 400px;
             transition: background .25s, border-color .25s;
         }
+
+        /* ── Ingredient linking ── */
+        .ing-link-section {
+            background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 12px;
+        }
+        .ing-link-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+        .ing-link-row .form-select { flex: 1; padding: 7px 10px; font-size: 12px; min-width: 0; }
+        .ing-link-qty {
+            width: 80px; flex-shrink: 0; padding: 7px 10px; background: var(--input-bg);
+            border: 1px solid var(--border2); border-radius: 7px; color: var(--text); font-size: 12px; outline: none;
+        }
+        .ing-link-qty:focus { border-color: var(--accent); }
+        .btn-add-ing {
+            padding: 7px 12px; background: var(--accent); color: #000; border: none;
+            border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;
+            white-space: nowrap; flex-shrink: 0; transition: background .15s;
+        }
+        .btn-add-ing:hover { background: var(--accent-h); }
+        .ing-link-list { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+        .ing-link-tag {
+            display: flex; align-items: center; background: var(--surface);
+            border: 1px solid var(--border2); border-radius: 5px; padding: 5px 9px; font-size: 11px;
+        }
+        .ing-link-name  { flex: 1; color: var(--text); }
+        .ing-link-unit  { color: var(--text-dim); font-size: 10px; margin-left: 4px; }
+        .ing-link-qty-badge { color: var(--accent); font-weight: 700; margin: 0 8px; white-space: nowrap; }
+        .btn-remove-ing {
+            background: none; border: none; color: var(--text-dim);
+            cursor: pointer; font-size: 13px; padding: 0 2px; line-height: 1; transition: color .15s;
+        }
+        .btn-remove-ing:hover { color: var(--red); }
+        .ing-empty-hint { font-size: 11px; color: var(--text-dim); padding: 6px 0; text-align: center; }
     </style>
 <base target="_blank">
 </head>
@@ -392,6 +388,7 @@
         <a href="/orders"    class="nav-item" target="_self"><span class="nav-icon">📋</span> Orders</a>
         {% if current_user.role in ['admin', 'manager'] %}
         <a href="/products"  class="nav-item active" target="_self"><span class="nav-icon">📦</span> Products</a>
+        <a href="/inventory" class="nav-item" target="_self"><span class="nav-icon">🧪</span> Inventory</a>
         <a href="/reports"   class="nav-item" target="_self"><span class="nav-icon">📈</span> Reports</a>
         <a href="/users"     class="nav-item" target="_self"><span class="nav-icon">👥</span> Users</a>
         {% endif %}
@@ -421,51 +418,51 @@
         </div>
         <div class="header-actions">
             <button class="btn-add-category" onclick="openCatModal(null)">🏷️ Add Category</button>
-            <button class="btn-add" onclick="openAddModal()">➕ Add Product</button>
+            <button class="btn-add"          onclick="openAddModal()">➕ Add Product</button>
         </div>
     </div>
 
     <div id="alertBox" class="alert"></div>
 
-    <input class="search-bar" type="text"
+    <input class="search-bar" type="text" id="searchBar"
            placeholder="🔍 Search products..."
-           onkeyup="filterTable(this.value)"/>
+           oninput="applyProductFilters()"/>
 
-<!-- ── Product Filter Bar ── -->
-<div class="filter-bar-row" id="productFilterBar">
-    <div class="filter-group">
-        <span class="filter-label">Sort</span>
-        <button class="filter-btn active" data-sort="default"     onclick="setSort('default',this)">Default</button>
-        <button class="filter-btn"        data-sort="az"          onclick="setSort('az',this)">A→Z</button>
-        <button class="filter-btn"        data-sort="za"          onclick="setSort('za',this)">Z→A</button>
-        <button class="filter-btn"        data-sort="price-asc"   onclick="setSort('price-asc',this)">Price ↑</button>
-        <button class="filter-btn"        data-sort="price-desc"  onclick="setSort('price-desc',this)">Price ↓</button>
-        <button class="filter-btn"        data-sort="stock-asc"   onclick="setSort('stock-asc',this)">Stock ↑</button>
-        <button class="filter-btn"        data-sort="stock-desc"  onclick="setSort('stock-desc',this)">Stock ↓</button>
+    <!-- ── Filter bar ── -->
+    <div class="filter-bar-row" id="productFilterBar">
+        <div class="filter-group">
+            <span class="filter-label">Sort</span>
+            <button class="filter-btn active" data-sort="default"    onclick="setSort('default',this)">Default</button>
+            <button class="filter-btn"        data-sort="az"         onclick="setSort('az',this)">A→Z</button>
+            <button class="filter-btn"        data-sort="za"         onclick="setSort('za',this)">Z→A</button>
+            <button class="filter-btn"        data-sort="price-asc"  onclick="setSort('price-asc',this)">Price ↑</button>
+            <button class="filter-btn"        data-sort="price-desc" onclick="setSort('price-desc',this)">Price ↓</button>
+            <button class="filter-btn"        data-sort="stock-asc"  onclick="setSort('stock-asc',this)">Stock ↑</button>
+            <button class="filter-btn"        data-sort="stock-desc" onclick="setSort('stock-desc',this)">Stock ↓</button>
+        </div>
+        <div class="filter-divider"></div>
+        <div class="filter-group">
+            <span class="filter-label">Category</span>
+            <select class="filter-select-sm" id="catFilterSelect" onchange="applyProductFilters()">
+                <option value="">All</option>
+            </select>
+        </div>
+        <div class="filter-divider"></div>
+        <div class="filter-group">
+            <span class="filter-label">Stock</span>
+            <button class="filter-btn active" data-stock="all" onclick="setStockFilter('all',this)">All</button>
+            <button class="filter-btn"        data-stock="in"  onclick="setStockFilter('in',this)">In Stock</button>
+            <button class="filter-btn"        data-stock="low" onclick="setStockFilter('low',this)">Low Stock</button>
+            <button class="filter-btn"        data-stock="out" onclick="setStockFilter('out',this)">Out of Stock</button>
+        </div>
+        <div class="filter-divider"></div>
+        <div class="filter-group">
+            <span class="filter-label">Add-Ons</span>
+            <button class="filter-btn active" data-addon="all" onclick="setAddonFilter('all',this)">All</button>
+            <button class="filter-btn"        data-addon="yes" onclick="setAddonFilter('yes',this)">Has Add-Ons</button>
+            <button class="filter-btn"        data-addon="no"  onclick="setAddonFilter('no',this)">No Add-Ons</button>
+        </div>
     </div>
-    <div class="filter-divider"></div>
-    <div class="filter-group">
-        <span class="filter-label">Category</span>
-        <select class="filter-select-sm" id="catFilterSelect" onchange="applyProductFilters()">
-            <option value="">All</option>
-        </select>
-    </div>
-    <div class="filter-divider"></div>
-    <div class="filter-group">
-        <span class="filter-label">Stock</span>
-        <button class="filter-btn active" data-stock="all" onclick="setStockFilter('all',this)">All</button>
-        <button class="filter-btn" data-stock="in"          onclick="setStockFilter('in',this)">In Stock</button>
-        <button class="filter-btn" data-stock="low"         onclick="setStockFilter('low',this)">Low Stock</button>
-        <button class="filter-btn" data-stock="out"         onclick="setStockFilter('out',this)">Out of Stock</button>
-    </div>
-    <div class="filter-divider"></div>
-    <div class="filter-group">
-        <span class="filter-label">Add-Ons</span>
-        <button class="filter-btn active" data-addon="all"  onclick="setAddonFilter('all',this)">All</button>
-        <button class="filter-btn"        data-addon="yes"  onclick="setAddonFilter('yes',this)">Has Add-Ons</button>
-        <button class="filter-btn"        data-addon="no"   onclick="setAddonFilter('no',this)">No Add-Ons</button>
-    </div>
-</div>
 
     <div class="table-card">
         {% if products %}
@@ -507,11 +504,11 @@
                     <td>{{ product.quantity }}</td>
                     <td>
                         {% if product.quantity == 0 %}
-                        <span class="stock-badge stock-out">Out of Stock</span>
+                            <span class="stock-badge stock-out">Out of Stock</span>
                         {% elif product.quantity <= 5 %}
-                        <span class="stock-badge stock-low">Low Stock</span>
+                            <span class="stock-badge stock-low">Low Stock</span>
                         {% else %}
-                        <span class="stock-badge stock-ok">In Stock</span>
+                            <span class="stock-badge stock-ok">In Stock</span>
                         {% endif %}
                     </td>
                     <td>
@@ -546,13 +543,13 @@
         {% endif %}
     </div>
 
-    <!-- ── CATEGORIES SECTION ── -->
+    <!-- ── Categories section ── -->
     <div class="section-divider">🏷️ Categories</div>
     <div class="categories-tree" id="categoriesTree">
         <div style="color:var(--text-dim);font-size:13px;">Loading categories...</div>
     </div>
 
-    <!-- ── ADD-ONS SECTION ── -->
+    <!-- ── Add-ons section ── -->
     <div class="section-divider">➕ Add Ons</div>
     <div class="addons-header-row">
         <div style="font-size:13px;color:var(--text-muted);">
@@ -565,7 +562,9 @@
     </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════ -->
 <!-- ── PRODUCT MODAL (Add / Edit) ── -->
+<!-- ══════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="productModal">
     <div class="modal">
         <div class="modal-title" id="modalTitle">Add Product</div>
@@ -611,14 +610,38 @@
                            cursor:pointer;display:none;transition:all 0.2s;"
                     onclick="removeProductImage()">🗑️ Remove Image</button>
         </div>
+
+        <!-- ── Ingredient linking ── -->
+        <div class="form-group">
+            <label>🧪 Linked Ingredients</label>
+            <div class="ing-link-section">
+                <div class="ing-link-row">
+                    <select class="form-select" id="ingLinkSelect">
+                        <option value="">— Select ingredient —</option>
+                    </select>
+                    <input class="ing-link-qty" type="number" id="ingLinkQty"
+                           placeholder="Qty" min="0.001" step="0.001"/>
+                    <button type="button" class="btn-add-ing" onclick="addIngredientLink()">Add</button>
+                </div>
+                <div class="ing-link-list" id="ingLinkList">
+                    <div class="ing-empty-hint">No ingredients linked yet.</div>
+                </div>
+            </div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:5px;">
+                🔁 These quantities are automatically deducted from inventory on each sale.
+            </div>
+        </div>
+
         <div class="modal-actions">
-            <button class="btn-save" onclick="saveProduct()">Save</button>
+            <button class="btn-save"   onclick="saveProduct()">Save</button>
             <button class="btn-cancel" onclick="closeModal()">Cancel</button>
         </div>
     </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════ -->
 <!-- ── CATEGORY MODAL ── -->
+<!-- ══════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="categoryModal">
     <div class="cat-modal">
         <div class="modal-title" id="catModalTitle">🏷️ Add Category</div>
@@ -638,13 +661,15 @@
             <input type="hidden" id="catColor" value="#f5c518"/>
         </div>
         <div class="modal-actions">
-            <button class="btn-save" onclick="saveCategory()">Save</button>
+            <button class="btn-save"   onclick="saveCategory()">Save</button>
             <button class="btn-cancel" onclick="closeCatModal()">Cancel</button>
         </div>
     </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════ -->
 <!-- ── ADD-ON MODAL ── -->
+<!-- ══════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="addonModal">
     <div class="addon-modal">
         <div class="modal-title">➕ Add Add-On</div>
@@ -666,14 +691,14 @@
             </div>
         </div>
         <div class="modal-actions">
-            <button class="btn-save" onclick="saveAddon()">Save</button>
+            <button class="btn-save"   onclick="saveAddon()">Save</button>
             <button class="btn-cancel" onclick="closeAddonModal()">Cancel</button>
         </div>
     </div>
 </div>
 
 <script>
-    /* ── THEME ── */
+    /* ── Theme ── */
     var THEME_KEY = 'prim3pos_theme';
     function applyTheme(isDark) {
         document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
@@ -685,18 +710,91 @@
     function toggleTheme(chk) { applyTheme(!chk.checked); }
     applyTheme(localStorage.getItem(THEME_KEY) !== 'light');
 
-    var allCategories = [];
-    var allAddons     = [];
+    /* ── State ── */
+    var allCategories         = [];
+    var allAddons             = [];
+    var allIngredientsCatalog = {};
+    var tempIngLinks          = [];
+
+    var _pSort  = 'default';
+    var _pStock = 'all';
+    var _pAddon = 'all';
+    var _addonCatIds = new Set();
 
     var SWATCH_COLORS = [
         '#f5c518','#4ecca3','#cc3333','#3a86ff','#ff6b6b',
         '#a8dadc','#e9c46a','#f4a261','#2a9d8f','#888888'
     ];
 
+    /* ════════════════════════════════════════════════════════════
+       FILTER STATE PERSISTENCE
+       Save search/filter state to sessionStorage before reload,
+       restore it on the next page load — so edits/voids don't
+       lose the user's current search context.
+    ════════════════════════════════════════════════════════════ */
+    var _SS_KEY = 'prod_filter_state';
+
+    function saveFilterState() {
+        var state = {
+            search: document.getElementById('searchBar').value || '',
+            sort:   _pSort,
+            stock:  _pStock,
+            addon:  _pAddon,
+            cat:    (document.getElementById('catFilterSelect') || {value:''}).value || '',
+        };
+        sessionStorage.setItem(_SS_KEY, JSON.stringify(state));
+    }
+
+    function restoreFilterState() {
+        var raw = sessionStorage.getItem(_SS_KEY);
+        if (!raw) return;
+        sessionStorage.removeItem(_SS_KEY);
+
+        var state;
+        try { state = JSON.parse(raw); } catch(e) { return; }
+
+        /* Restore search text */
+        if (state.search) {
+            var sb = document.getElementById('searchBar');
+            if (sb) sb.value = state.search;
+        }
+
+        /* Restore sort */
+        if (state.sort && state.sort !== 'default') {
+            _pSort = state.sort;
+            document.querySelectorAll('[data-sort]').forEach(function(b) { b.classList.remove('active'); });
+            var sb2 = document.querySelector('[data-sort="' + state.sort + '"]');
+            if (sb2) sb2.classList.add('active');
+        }
+
+        /* Restore stock filter */
+        if (state.stock && state.stock !== 'all') {
+            _pStock = state.stock;
+            document.querySelectorAll('[data-stock]').forEach(function(b) { b.classList.remove('active'); });
+            var sb3 = document.querySelector('[data-stock="' + state.stock + '"]');
+            if (sb3) sb3.classList.add('active');
+        }
+
+        /* Restore addon filter */
+        if (state.addon && state.addon !== 'all') {
+            _pAddon = state.addon;
+            document.querySelectorAll('[data-addon]').forEach(function(b) { b.classList.remove('active'); });
+            var sb4 = document.querySelector('[data-addon="' + state.addon + '"]');
+            if (sb4) sb4.classList.add('active');
+        }
+
+        /* Category restored inside loadCategories() after dropdown is populated */
+        window._pendingCatRestore = state.cat || '';
+
+        applyProductFilters();
+    }
+
+    /* ── Init ── */
     document.addEventListener('DOMContentLoaded', function() {
-        loadCategories();
+        loadCategories();   /* restoreFilterState() called inside after cat dropdown ready */
         buildSwatches();
         loadAddons();
+        loadAllIngredients();
     });
 
     function buildSwatches() {
@@ -721,20 +819,28 @@
         fetch('/categories')
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.success) {
-                allCategories = data.categories;
-                renderCategoriesTree();
-                populateCategoryDropdown();
-                populateAddonCategoryDropdown();
-                populateCatFilterDropdown();
+            if (!data.success) { showAlert('Failed to load categories.', 'error'); return; }
+            allCategories = data.categories;
+            renderCategoriesTree();
+            populateCategoryDropdown();
+            populateAddonCategoryDropdown();
+            populateCatFilterDropdown();
+
+            /* Restore category filter AFTER dropdown is populated, then re-apply */
+            if (window._pendingCatRestore) {
+                var sel = document.getElementById('catFilterSelect');
+                if (sel) sel.value = window._pendingCatRestore;
+                window._pendingCatRestore = '';
+                applyProductFilters();
             } else {
-                showAlert('Failed to load categories.', 'error');
+                /* First load with no saved state — still run filters to apply defaults */
+                restoreFilterState();
             }
         });
     }
 
     function renderCategoriesTree() {
-        var tree    = document.getElementById('categoriesTree');
+        var tree     = document.getElementById('categoriesTree');
         var parents  = allCategories.filter(function(c) { return !c.parent_id; });
         var children = allCategories.filter(function(c) { return !!c.parent_id; });
 
@@ -783,7 +889,7 @@
     }
 
     function populateCategoryDropdown() {
-        var select   = document.getElementById('productCategory');
+        var select    = document.getElementById('productCategory');
         var currentVal = select.value;
         select.innerHTML = '<option value="">— No Category —</option>';
 
@@ -803,15 +909,6 @@
             });
         });
 
-        children.filter(function(c) {
-            return !parents.find(function(p) { return p.id === c.parent_id; });
-        }).forEach(function(c) {
-            var opt = document.createElement('option');
-            opt.value = c.id;
-            opt.textContent = c.name;
-            select.appendChild(opt);
-        });
-
         select.value = currentVal;
     }
 
@@ -824,6 +921,33 @@
             opt.textContent = c.name;
             select.appendChild(opt);
         });
+    }
+
+    function populateCatFilterDropdown() {
+        var sel = document.getElementById('catFilterSelect');
+        if (!sel) return;
+        var cur = sel.value;
+        sel.innerHTML = '<option value="">All Categories</option>';
+
+        var parentMap = {};
+        allCategories.filter(function(c) { return !c.parent_id; }).forEach(function(c) { parentMap[c.id] = []; });
+        allCategories.filter(function(c) { return !!c.parent_id; }).forEach(function(c) {
+            if (parentMap[c.parent_id]) parentMap[c.parent_id].push(c);
+        });
+        allCategories.filter(function(c) { return !c.parent_id; }).forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = String(c.id);
+            opt.textContent = c.name;
+            sel.appendChild(opt);
+            (parentMap[c.id] || []).forEach(function(sub) {
+                var subOpt = document.createElement('option');
+                subOpt.value = String(sub.id);
+                subOpt.textContent = '\u00a0\u00a0\u00a0' + sub.name;
+                sel.appendChild(subOpt);
+            });
+        });
+
+        sel.value = cur;
     }
 
     function openCatModal(parentId, parentName) {
@@ -847,7 +971,6 @@
         }
         document.getElementById('categoryModal').classList.add('visible');
     }
-
     function closeCatModal() { document.getElementById('categoryModal').classList.remove('visible'); }
 
     function saveCategory() {
@@ -869,7 +992,7 @@
     }
 
     function deleteCategory(id, name) {
-        if (!confirm('Delete category "' + name + '"? Products will become uncategorized and sub-categories will be promoted.')) return;
+        if (!confirm('Delete category "' + name + '"? Products will become uncategorized.')) return;
         fetch('/categories/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -888,11 +1011,9 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             allAddons = data.addons || [];
-            // track which MAIN category IDs have at least one add-on
             _addonCatIds = new Set(
-                allAddons
-                    .filter(function(a) { return a.category_id; })
-                    .map(function(a) { return String(a.category_id); })
+                allAddons.filter(function(a) { return a.category_id; })
+                         .map(function(a) { return String(a.category_id); })
             );
             renderAddons();
         })
@@ -903,15 +1024,15 @@
     }
 
     function renderAddons() {
-        var container = document.getElementById('addonsContainer');
+        var container     = document.getElementById('addonsContainer');
         if (allAddons.length === 0) {
-            container.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:16px 0;">No add-ons yet. Click "Add Add-On" to create one.</div>';
+            container.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:16px 0;">No add-ons yet.</div>';
             return;
         }
 
-        var groups       = {};
+        var groups        = {};
         var uncategorized = [];
-        var catMap       = {};
+        var catMap        = {};
         allCategories.filter(function(c) { return !c.parent_id; }).forEach(function(c) { catMap[c.id] = c; });
 
         allAddons.forEach(function(a) {
@@ -935,8 +1056,7 @@
                 ' <span style="color:var(--text-dim);font-weight:400;">(' + g.items.length + ')</span>' +
                 '<span class="caret" style="transform:rotate(-90deg)">▼</span></div>' +
                 '<div class="addon-group-list collapsed" id="' + groupId + '">' +
-                g.items.map(addonCardHtml).join('') +
-                '</div></div>';
+                g.items.map(addonCardHtml).join('') + '</div></div>';
         });
 
         if (uncategorized.length > 0) {
@@ -947,8 +1067,7 @@
                 ' <span style="color:var(--text-dim);font-weight:400;">(' + uncategorized.length + ')</span>' +
                 '<span class="caret" style="transform:rotate(-90deg)">▼</span></div>' +
                 '<div class="addon-group-list collapsed" id="' + groupId + '">' +
-                uncategorized.map(addonCardHtml).join('') +
-                '</div></div>';
+                uncategorized.map(addonCardHtml).join('') + '</div></div>';
         }
 
         container.innerHTML = html;
@@ -975,7 +1094,6 @@
         document.getElementById('addonCategory').value = '';
         document.getElementById('addonModal').classList.add('visible');
     }
-
     function closeAddonModal() { document.getElementById('addonModal').classList.remove('visible'); }
 
     function saveAddon() {
@@ -1012,19 +1130,20 @@
 
     /* ── Product modal ── */
     function openAddModal() {
-        document.getElementById('modalTitle').textContent  = 'Add Product';
-        document.getElementById('productId').value        = '';
-        document.getElementById('productName').value      = '';
-        document.getElementById('productPrice').value     = '';
-        document.getElementById('productQty').value       = '';
-        document.getElementById('productCategory').value  = '';
-        document.getElementById('photoGroup').style.display = 'none';
+        document.getElementById('modalTitle').textContent    = '➕ Add Product';
+        document.getElementById('productId').value           = '';
+        document.getElementById('productName').value         = '';
+        document.getElementById('productPrice').value        = '';
+        document.getElementById('productQty').value          = '';
+        document.getElementById('productCategory').value     = '';
+        document.getElementById('photoGroup').style.display  = 'none';
+        _resetIngLinks();
         document.getElementById('productModal').classList.add('visible');
     }
 
     function openEditModal(btn) {
         var pid = btn.getAttribute('data-id');
-        document.getElementById('modalTitle').textContent    = 'Edit Product';
+        document.getElementById('modalTitle').textContent    = '✏️ Edit Product';
         document.getElementById('productId').value           = pid;
         document.getElementById('productName').value         = btn.getAttribute('data-name');
         document.getElementById('productPrice').value        = btn.getAttribute('data-price');
@@ -1032,8 +1151,8 @@
         document.getElementById('productCategory').value     = btn.getAttribute('data-category') || '';
         document.getElementById('photoGroup').style.display  = 'block';
 
-        var preview   = document.getElementById('photoPreview');
-        preview.src   = '/products/' + pid + '/photo?t=' + Date.now();
+        var preview = document.getElementById('photoPreview');
+        preview.src = '/products/' + pid + '/photo?t=' + Date.now();
         preview.dataset.removed = '';
         document.getElementById('productPhoto').value = '';
 
@@ -1044,6 +1163,23 @@
             removeBtn.style.display = 'none';
             this.onerror = null;
         };
+
+        _resetIngLinks();
+        fetch('/products/' + pid + '/ingredients')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) return;
+            tempIngLinks = (data.ingredients || []).map(function(i) {
+                return {
+                    ingredient_id:   i.ingredient_id,
+                    name:            i.name,
+                    unit:            i.unit,
+                    quantity_needed: i.quantity_needed,
+                };
+            });
+            renderIngLinkList();
+        });
+
         document.getElementById('productModal').classList.add('visible');
     }
 
@@ -1073,6 +1209,7 @@
         document.getElementById('removeImageBtn').style.display = 'none';
         var preview = document.getElementById('photoPreview');
         if (preview) preview.dataset.removed = '';
+        _resetIngLinks();
     }
 
     function showAlert(message, type) {
@@ -1082,6 +1219,10 @@
         setTimeout(function() { box.className = 'alert'; }, 3000);
     }
 
+    /* ════════════════════════════════════════════════════════════
+       saveProduct — saves filter state BEFORE reloading so the
+       search/sort/filter context survives the page refresh.
+    ════════════════════════════════════════════════════════════ */
     function saveProduct() {
         var id         = document.getElementById('productId').value;
         var name       = document.getElementById('productName').value.trim();
@@ -1096,35 +1237,45 @@
             return;
         }
 
+        function _afterSave(productId) {
+            _saveIngredientLinks(productId, function() {
+                closeModal();
+                showAlert('Product saved successfully!', 'success');
+                saveFilterState();                              /* ← preserve filters */
+                setTimeout(function() { location.reload(); }, 900);
+            });
+        }
+
         if (id && photoFile) {
             var fd = new FormData();
-            fd.append('id', id);
-            fd.append('name', name);
-            fd.append('price', price);
-            fd.append('quantity', qty);
+            fd.append('id',          id);
+            fd.append('name',        name);
+            fd.append('price',       price);
+            fd.append('quantity',    qty);
             fd.append('category_id', categoryId || '');
-            fd.append('photo', photoFile);
+            fd.append('photo',       photoFile);
 
             fetch('/products/edit', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (data.success) { closeModal(); showAlert(data.message, 'success'); setTimeout(function() { location.reload(); }, 900); }
-                else showAlert(data.error, 'error');
+                if (data.success) { _afterSave(parseInt(id)); }
+                else { showAlert(data.error, 'error'); }
             });
         } else {
             var url  = id ? '/products/edit' : '/products/add';
-            var body = { name: name, price: price, quantity: qty, category_id: categoryId ? parseInt(categoryId) : null };
+            var body = { name: name, price: price, quantity: qty,
+                         category_id: categoryId ? parseInt(categoryId) : null };
             if (id) { body.id = parseInt(id); body.remove_photo = removePhoto; }
 
             fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+                body: JSON.stringify(body),
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (data.success) { closeModal(); showAlert(data.message, 'success'); setTimeout(function() { location.reload(); }, 900); }
-                else showAlert(data.error, 'error');
+                if (data.success) { _afterSave(data.id || parseInt(id)); }
+                else { showAlert(data.error, 'error'); }
             });
         }
     }
@@ -1140,8 +1291,13 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.success) { showAlert(data.message, 'success'); setTimeout(function() { location.reload(); }, 900); }
-            else showAlert(data.error, 'error');
+            if (data.success) {
+                showAlert(data.message, 'success');
+                saveFilterState();                              /* ← preserve filters */
+                setTimeout(function() { location.reload(); }, 900);
+            } else {
+                showAlert(data.error, 'error');
+            }
         });
     }
 
@@ -1156,118 +1312,169 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.success) { showAlert(data.message, 'success'); setTimeout(function() { location.reload(); }, 900); }
-            else showAlert(data.error, 'error');
+            if (data.success) {
+                showAlert(data.message, 'success');
+                saveFilterState();                              /* ← preserve filters */
+                setTimeout(function() { location.reload(); }, 900);
+            } else {
+                showAlert(data.error, 'error');
+            }
         });
     }
 
-// ── Product filter / sort state ───────────────────────────────────
-var _pSort      = 'default';
-var _pStock     = 'all';
-var _pAddon     = 'all';
-var _addonCatIds = new Set();   // populated after loadAddons()
+    /* ── Filter / Sort ── */
+    function applyProductFilters() {
+        var search = document.getElementById('searchBar').value.toLowerCase();
+        var catVal = (document.getElementById('catFilterSelect') || {value: ''}).value;
+        var rows   = Array.from(document.querySelectorAll('#tableBody tr'));
 
-function applyProductFilters() {
-    var search  = (document.querySelector('.search-bar') || {value: ''}).value.toLowerCase();
-    var catVal  = (document.getElementById('catFilterSelect') || {value: ''}).value;
-    var rows    = Array.from(document.querySelectorAll('#tableBody tr'));
+        rows.forEach(function(row) {
+            var name   = row.getAttribute('data-name') || '';
+            var cat    = row.getAttribute('data-cat')  || '';
+            var status = row.getAttribute('data-status') || '';
 
-    // ── Filter ──────────────────────────────────────────────────
-    rows.forEach(function (row) {
-        var name   = row.getAttribute('data-name') || '';
-        var cat    = row.getAttribute('data-cat')  || '';
-        var status = row.getAttribute('data-status') || '';
+            var nameOk  = name.includes(search);
+            var catOk   = !catVal || cat === catVal;
+            var stockOk = _pStock === 'all' || status === _pStock;
+            var mainCat = cat ? _getMainCatId(cat) : null;
+            var addonOk = _pAddon === 'all' ||
+                          (_pAddon === 'yes' && mainCat && _addonCatIds.has(mainCat)) ||
+                          (_pAddon === 'no'  && (!mainCat || !_addonCatIds.has(mainCat)));
 
-        var nameOk  = name.includes(search);
-        var catOk   = !catVal || cat === catVal;
-        var stockOk = _pStock === 'all' || status === _pStock;
-        // Add-on filter: check the MAIN category (addons are assigned to main cats)
-        var mainCat = cat ? _getMainCatId(cat) : null;
-        var addonOk = _pAddon === 'all' ||
-                      (_pAddon === 'yes' && mainCat && _addonCatIds.has(mainCat)) ||
-                      (_pAddon === 'no'  && (!mainCat || !_addonCatIds.has(mainCat)));
-
-        row.style.display = (nameOk && catOk && stockOk && addonOk) ? '' : 'none';
-    });
-
-    // ── Sort (only visible rows) ──────────────────────────────
-    var tbody   = document.getElementById('tableBody');
-    var visible = rows.filter(function (r) { return r.style.display !== 'none'; });
-
-    visible.sort(function (a, b) {
-        switch (_pSort) {
-            case 'az':         return (a.getAttribute('data-name')  || '').localeCompare(b.getAttribute('data-name') || '');
-            case 'za':         return (b.getAttribute('data-name')  || '').localeCompare(a.getAttribute('data-name') || '');
-            case 'price-asc':  return parseFloat(a.getAttribute('data-price') || 0) - parseFloat(b.getAttribute('data-price') || 0);
-            case 'price-desc': return parseFloat(b.getAttribute('data-price') || 0) - parseFloat(a.getAttribute('data-price') || 0);
-            case 'stock-asc':  return parseInt(a.getAttribute('data-qty') || 0) - parseInt(b.getAttribute('data-qty') || 0);
-            case 'stock-desc': return parseInt(b.getAttribute('data-qty') || 0) - parseInt(a.getAttribute('data-qty') || 0);
-            default:           return 0;
-        }
-    });
-
-    visible.forEach(function (r) { tbody.appendChild(r); });
-}
-
-// alias so the existing search-bar onkeyup still works
-function filterTable(search) { applyProductFilters(); }
-
-function setSort(val, btn) {
-    _pSort = val;
-    document.querySelectorAll('[data-sort]').forEach(function (b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-    applyProductFilters();
-}
-function setStockFilter(val, btn) {
-    _pStock = val;
-    document.querySelectorAll('[data-stock]').forEach(function (b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-    applyProductFilters();
-}
-function setAddonFilter(val, btn) {
-    _pAddon = val;
-    document.querySelectorAll('[data-addon]').forEach(function (b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-    applyProductFilters();
-}
-
-// ── Populate category filter dropdown (no arrows) ─────────────────
-function populateCatFilterDropdown() {
-    var sel = document.getElementById('catFilterSelect');
-    if (!sel) return;
-    var cur = sel.value;
-    sel.innerHTML = '<option value="">All Categories</option>';
-    // Build parent→children map
-    var parentMap = {};
-    allCategories.filter(function(c) { return !c.parent_id; }).forEach(function(c) { parentMap[c.id] = []; });
-    allCategories.filter(function(c) { return !!c.parent_id; }).forEach(function(c) {
-        if (parentMap[c.parent_id]) parentMap[c.parent_id].push(c);
-    });
-    // Render parents then their children indented
-    allCategories.filter(function(c) { return !c.parent_id; }).forEach(function(c) {
-        var opt = document.createElement('option');
-        opt.value = String(c.id);
-        opt.textContent = c.name;
-        sel.appendChild(opt);
-        (parentMap[c.id] || []).forEach(function(sub) {
-            var subOpt = document.createElement('option');
-            subOpt.value = String(sub.id);
-            subOpt.textContent = '\u00a0\u00a0\u00a0' + sub.name;
-            sel.appendChild(subOpt);
+            row.style.display = (nameOk && catOk && stockOk && addonOk) ? '' : 'none';
         });
-    });
-    sel.value = cur;
-}
 
-// ── Fix addon filter: "Has Add-Ons" matches products whose MAIN category
-//    (or the main cat of their sub-category) has add-ons ──────────────
-function _getMainCatId(catId) {
-    // If catId belongs to a sub-category, return its parent id; otherwise return catId itself
-    var cat = allCategories.find(function(c) { return String(c.id) === String(catId); });
-    if (!cat) return null;
-    return cat.parent_id ? String(cat.parent_id) : String(cat.id);
-}
+        /* Sort visible rows */
+        var tbody   = document.getElementById('tableBody');
+        var visible = rows.filter(function(r) { return r.style.display !== 'none'; });
 
+        visible.sort(function(a, b) {
+            switch (_pSort) {
+                case 'az':         return (a.getAttribute('data-name')  || '').localeCompare(b.getAttribute('data-name') || '');
+                case 'za':         return (b.getAttribute('data-name')  || '').localeCompare(a.getAttribute('data-name') || '');
+                case 'price-asc':  return parseFloat(a.getAttribute('data-price') || 0) - parseFloat(b.getAttribute('data-price') || 0);
+                case 'price-desc': return parseFloat(b.getAttribute('data-price') || 0) - parseFloat(a.getAttribute('data-price') || 0);
+                case 'stock-asc':  return parseInt(a.getAttribute('data-qty') || 0) - parseInt(b.getAttribute('data-qty') || 0);
+                case 'stock-desc': return parseInt(b.getAttribute('data-qty') || 0) - parseInt(a.getAttribute('data-qty') || 0);
+                default:           return 0;
+            }
+        });
+
+        visible.forEach(function(r) { tbody.appendChild(r); });
+    }
+
+    function setSort(val, btn) {
+        _pSort = val;
+        document.querySelectorAll('[data-sort]').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        applyProductFilters();
+    }
+    function setStockFilter(val, btn) {
+        _pStock = val;
+        document.querySelectorAll('[data-stock]').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        applyProductFilters();
+    }
+    function setAddonFilter(val, btn) {
+        _pAddon = val;
+        document.querySelectorAll('[data-addon]').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        applyProductFilters();
+    }
+
+    function _getMainCatId(catId) {
+        var cat = allCategories.find(function(c) { return String(c.id) === String(catId); });
+        if (!cat) return null;
+        return cat.parent_id ? String(cat.parent_id) : String(cat.id);
+    }
+
+    /* ── Ingredient linking ── */
+    function loadAllIngredients() {
+        fetch('/api/ingredients')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) return;
+            allIngredientsCatalog = {};
+            var sel = document.getElementById('ingLinkSelect');
+            sel.innerHTML = '<option value="">— Select ingredient —</option>';
+            (data.ingredients || []).forEach(function(ing) {
+                allIngredientsCatalog[ing.id] = ing;
+                var opt = document.createElement('option');
+                opt.value       = ing.id;
+                opt.textContent = ing.name + ' (' + ing.unit + ')';
+                sel.appendChild(opt);
+            });
+        })
+        .catch(function() {});
+    }
+
+    function _resetIngLinks() {
+        tempIngLinks = [];
+        document.getElementById('ingLinkSelect').value = '';
+        document.getElementById('ingLinkQty').value    = '';
+        renderIngLinkList();
+    }
+
+    function addIngredientLink() {
+        var sel = document.getElementById('ingLinkSelect');
+        var qty = parseFloat(document.getElementById('ingLinkQty').value);
+        var id  = parseInt(sel.value);
+
+        if (!id)        { showAlert('Please select an ingredient.', 'error'); return; }
+        if (!qty || qty <= 0) { showAlert('Please enter a valid quantity.', 'error'); return; }
+
+        var ing = allIngredientsCatalog[id];
+        if (!ing) return;
+
+        var existing = tempIngLinks.find(function(l) { return l.ingredient_id === id; });
+        if (existing) {
+            existing.quantity_needed = qty;
+        } else {
+            tempIngLinks.push({ ingredient_id: id, name: ing.name, unit: ing.unit, quantity_needed: qty });
+        }
+
+        sel.value = '';
+        document.getElementById('ingLinkQty').value = '';
+        renderIngLinkList();
+    }
+
+    function removeIngredientLink(ingredientId) {
+        tempIngLinks = tempIngLinks.filter(function(l) { return l.ingredient_id !== ingredientId; });
+        renderIngLinkList();
+    }
+
+    function renderIngLinkList() {
+        var list = document.getElementById('ingLinkList');
+        if (!list) return;
+        if (tempIngLinks.length === 0) {
+            list.innerHTML = '<div class="ing-empty-hint">No ingredients linked yet.</div>';
+            return;
+        }
+        list.innerHTML = tempIngLinks.map(function(l) {
+            return '<div class="ing-link-tag">' +
+                '<span class="ing-link-name">' + escHtml(l.name) + '</span>' +
+                '<span class="ing-link-unit">' + escHtml(l.unit) + '</span>' +
+                '<span class="ing-link-qty-badge">× ' + parseFloat(l.quantity_needed).toFixed(3) + '</span>' +
+                '<button class="btn-remove-ing" onclick="removeIngredientLink(' + l.ingredient_id + ')" title="Remove">✕</button>' +
+                '</div>';
+        }).join('');
+    }
+
+    function _saveIngredientLinks(productId, callback) {
+        var payload = tempIngLinks.map(function(l) {
+            return { ingredient_id: l.ingredient_id, quantity_needed: l.quantity_needed };
+        });
+        fetch('/products/' + productId + '/ingredients/set', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ ingredients: payload }),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function() { if (callback) callback(); })
+        .catch(function()  { if (callback) callback(); });
+    }
+
+    /* ── Helpers ── */
     function escHtml(str) {
         return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
