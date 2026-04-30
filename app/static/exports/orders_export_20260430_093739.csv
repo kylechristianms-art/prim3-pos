@@ -1,0 +1,10 @@
+ID,Label,Subtotal,Discount,Total,Payment,Type,Status,Created At,Void Reason,Void Resolution
+1,TEST,198.00,1253.80,-1055.80,other,dine_in,COMPLETED,2026-04-29 01:27,,
+2,TEST,228.00,75.80,152.20,gcash,takeout,VOIDED,2026-04-29 01:31,345678,
+3,Sale #12,139.00,0.00,139.00,gcash,dine_in,COMPLETED,2026-04-30 02:10,,
+4,Sale #13,248.00,0.00,248.00,card,dine_in,COMPLETED,2026-04-30 02:32,,
+5,Sale #14,407.00,0.00,407.00,card,dine_in,COMPLETED,2026-04-30 03:21,,
+6,test,248.00,0.00,248.00,gcash,dine_in,VOIDED,2026-04-30 03:21,test,
+7,Sale #16,174.00,0.00,174.00,gcash,dine_in,COMPLETED,2026-04-30 08:59,,
+8,test,99.00,0.00,99.00,gcash,dine_in,VOIDED,2026-04-30 08:59,56789,
+9,Sale #19,228.00,0.00,228.00,gcash,dine_in,COMPLETED,2026-04-30 09:12,,
