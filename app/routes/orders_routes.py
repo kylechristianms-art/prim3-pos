@@ -29,9 +29,7 @@ def checkout():
         payment_method  = data.get("payment_method", "cash")
         cash_received   = float(data.get("cash_received", 0))
 
-        # Enrich cart items with per-item discount amounts for the receipt
         enriched_cart = calculate_cart_with_item_discounts(cart, discount_amount)
-
         subtotal, total_discount, total = calculate_total(enriched_cart, discount_amount)
         change = calculate_change(total, cash_received, payment_method)
 
@@ -76,6 +74,7 @@ def checkout():
             "cashier":         current_user.name,
             "timestamp":       now.strftime("%b %d, %Y %I:%M %p"),
             "items":           enriched_cart,
+            "kitchen_notes":   data.get("kitchen_notes", ""),  # ← THIS was the missing line
         })
     except Exception as e:
         db.session.rollback()

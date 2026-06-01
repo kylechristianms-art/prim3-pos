@@ -275,24 +275,114 @@ def print_receipt(data: dict, printer: str):
 
 def print_kitchen(data: dict, printer: str):
     try:
-        lines = [
-            "*** KITCHEN ORDER ***",
-            f"Order : {data.get('sale_id', 'N/A')}",
-            f"Date  : {data.get('timestamp', '')}",
-            "-" * 32,
-        ]
-        for item in data.get("items", []):
-            qty = int(item.get("qty", 1))
-            lines.append(f"{item.get('name')} x{qty}")
-            for addon in item.get("addons", []):
-                aqty = int(addon.get("qty", 1))
-                lines.append(f"  + {addon.get('name')} x{aqty}")
+        W = 32
+
+        ESC           = "\x1b"
+        GS            = "\x1d"
+        BOLD_ON       = ESC + "\x45\x01"
+        BOLD_OFF      = ESC + "\x45\x00"
+        ALIGN_LEFT    = ESC + "\x61\x00"
+        ALIGN_CENTER  = ESC + "\x61\x01"
+
+        # Bold + double-height (0x08 + 0x10 = 0x18)
+        ITEM_ON  = ESC + "\x21\x18"
+        ITEM_OFF = ESC + "\x21\x00"
+
+        COL_ITEM = 24
+        COL_QTY  = W - COL_ITEM  # = 8
+
+        def divider(char="-"):
+            return char * W
+
+        parts = []
+        def t(text):
+            parts.append(text.encode("utf-8"))
+        def b(raw_bytes):
+            parts.append(raw_bytes)
+
+        import re
+        def sort_key(item):
+            name = item.get("name", "")
+            cleaned = re.sub(r"^\d+\s*oz\s*[-–]?\s*", "", name, flags=re.IGNORECASE).strip()
+            cleaned = re.sub(r"^(XL|[SML])\s+", "", cleaned, flags=re.IGNORECASE).strip()
+            return cleaned.lower()
+
+        order_notes = str(data.get("kitchen_notes") or "").strip()
+
+        # ── Header ────────────────────────────────────────────────
+        t(ALIGN_CENTER)
+        t(BOLD_ON + "*** KITCHEN ORDER ***" + BOLD_OFF + "\n")
+        t("\n")
+        t(ALIGN_LEFT)
+        t(f"Cashier: {data.get('cashier', '')}\n")
+        t(f"Order  : #{data.get('sale_id', 'N/A')}\n")
+        t(f"Date   : {data.get('timestamp', '')}\n")
+        t(divider() + "\n")
+
+        # ── Column Headers ────────────────────────────────────────
+        t(BOLD_ON + "ITEM".center(COL_ITEM) + "QTY".center(COL_QTY) + "\n" + BOLD_OFF)
+        t(divider() + "\n")
+
+        # ── Items (sorted) ────────────────────────────────────────
+        sorted_items = sorted(data.get("items", []), key=sort_key)
+
+        for item in sorted_items:
+            name = item.get("name", "")
+            qty  = int(item.get("qty", 1))
+
+            name_chunks = [name[i:i+COL_ITEM] for i in range(0, max(len(name), 1), COL_ITEM)]
+            for idx, chunk in enumerate(name_chunks):
+                if idx == 0:
+                    qty_str = ("x" + str(qty)).center(COL_QTY)
+                    t(ITEM_ON + f"{chunk:<{COL_ITEM}}{qty_str}" + ITEM_OFF + "\n")
+                else:
+                    t(ITEM_ON + f"{chunk}" + ITEM_OFF + "\n")
+
+            # Per-item note — immediately under item
             if item.get("notes"):
-                lines.append(f"  NOTE: {item['notes']}")
-        if data.get("kitchen_notes"):
-            lines += ["-" * 32, f"NOTES: {data['kitchen_notes']}"]
-        lines += ["=" * 32, "\n\n\n"]
-        _send(printer, "\n".join(lines).encode("utf-8"))
+                raw_note = f"  NOTE: {item['notes']}"
+                while len(raw_note) > W:
+                    t(raw_note[:W] + "\n")
+                    raw_note = "    " + raw_note[W:]
+                t(raw_note + "\n")
+
+            # Add-ons — immediately under note
+            for addon in item.get("addons", []):
+                aname = f"  + {addon.get('name', '')}"
+                aqty  = int(addon.get("qty", 1))
+                aname_chunks = [aname[i:i+COL_ITEM] for i in range(0, max(len(aname), 1), COL_ITEM)]
+                for idx, chunk in enumerate(aname_chunks):
+                    if idx == 0:
+                        aqty_str = ("x" + str(aqty)).center(COL_QTY)
+                        t(f"{chunk:<{COL_ITEM}}{aqty_str}\n")
+                    else:
+                        t(f"{chunk}\n")
+
+            # Single blank line after full item block
+            t("\n")
+
+        # ── Order-level kitchen notes ─────────────────────────────
+        if order_notes:
+            t(divider() + "\n")
+            t(BOLD_ON + "ORDER NOTES:\n" + BOLD_OFF)
+            raw = order_notes
+            while len(raw) > W:
+                t(raw[:W] + "\n")
+                raw = "  " + raw[W:]
+            t(raw + "\n")
+
+        # ── Footer ────────────────────────────────────────────────
+        t(divider("=") + "\n")
+        t(ALIGN_CENTER)
+        t(BOLD_ON + "*** END OF ORDER ***" + BOLD_OFF + "\n")
+        t(ALIGN_LEFT)
+
+        # Feed enough lines to clear the cutter, then send a clean
+        # full-cut as raw bytes — never encode ESC/POS through utf-8
+        t("\n" * 8)
+        b(b"\x1d\x56\x00")   # GS V 0 — full cut, raw bytes, no encoding
+
+        _send(printer, b"".join(parts))
         return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
