@@ -228,9 +228,7 @@ def _build_receipt_text(data: dict) -> bytes:
         t(ALIGN_CENTER + "[LOGO]\n")
 
     t(ALIGN_CENTER)
-    t(BOLD_ON)
-    t("SALES INVOICE")
-    t(BOLD_OFF)
+    t(BOLD_ON + "SALES INVOICE" + BOLD_OFF)
     t("\n\n")
 
     t(ALIGN_LEFT + divider("=") + "\n")
@@ -243,7 +241,7 @@ def _build_receipt_text(data: dict) -> bytes:
     item_h  = f"{'ITEM':^{COL_ITEM}}"
     qty_h   = f"{'QTY':^{COL_QTY}}"
     price_h = f"{'PRICE':>{COL_PRICE}}"
-    t(item_h + qty_h + price_h + "\n")
+    t(BOLD_ON + item_h + qty_h + price_h + "\n" + BOLD_OFF)
     t(divider() + "\n")
 
     # ── Items ──────────────────────────────────────────────────────
@@ -255,8 +253,7 @@ def _build_receipt_text(data: dict) -> bytes:
         item_disc = float(
             item.get("discount") or
             item.get("discount_amount") or
-            item.get("item_discount") or
-            0
+            item.get("item_discount") or 0
         )
 
         t(item_row(name, qty, f"P{price:.2f}") + "\n")
@@ -322,7 +319,7 @@ def _build_receipt_text(data: dict) -> bytes:
     t(ALIGN_LEFT + "\n")
 
     # ── Feed & cut ─────────────────────────────────────────────────
-    t("\n" * 6)
+    t("\n" * 4)
     b(FEED_AND_CUT.encode("utf-8"))
 
     return b"".join(parts)
@@ -442,7 +439,7 @@ def print_kitchen(data: dict, printer: str):
         t(BOLD_ON + "*** END OF ORDER ***" + BOLD_OFF + "\n")
         t(ALIGN_LEFT)
 
-        t("\n" * 8)
+        t("\n" * 4)
         b(b"\x1d\x56\x00")   # GS V 0 — full cut, raw bytes, no encoding
 
         _send(printer, b"".join(parts))
