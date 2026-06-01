@@ -375,6 +375,30 @@
         }
         .btn-remove-ing:hover { color: var(--red); }
         .ing-empty-hint { font-size: 11px; color: var(--text-dim); padding: 6px 0; text-align: center; }
+
+        /* ── Pagination ── */
+        .pagination-bar {
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+            gap: 10px; padding: 12px 20px; border-top: 1px solid var(--border);
+            background: var(--surface3); transition: background .25s;
+        }
+        .pagination-info { font-size: 12px; color: var(--text-muted); }
+        .pagination-controls { display: flex; align-items: center; gap: 6px; }
+        .page-btn {
+            min-width: 32px; height: 32px; padding: 0 8px;
+            background: var(--surface2); border: 1px solid var(--border2);
+            border-radius: 6px; color: var(--text-muted); font-size: 12px; font-weight: 700;
+            cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center;
+        }
+        .page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+        .page-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+        .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .per-page-wrap { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+        .per-page-select {
+            padding: 4px 8px; background: var(--surface2); border: 1px solid var(--border2);
+            border-radius: 6px; color: var(--text); font-size: 12px; outline: none; cursor: pointer;
+        }
+        .per-page-select:focus { border-color: var(--accent); }
     </style>
 <base target="_blank">
 </head>
@@ -541,6 +565,21 @@
             <div style="margin-top:8px;font-size:12px">Click "Add Product" to get started!</div>
         </div>
         {% endif %}
+    </div>
+    <!-- ── Pagination bar ── -->
+    <div class="pagination-bar" id="paginationBar" style="display:none;">
+        <div class="per-page-wrap">
+            Show
+            <select class="per-page-select" id="perPageSelect" onchange="setPerPage(this.value)">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+            </select>
+            per page
+        </div>
+        <div class="pagination-info" id="paginationInfo"></div>
+        <div class="pagination-controls" id="paginationControls"></div>
     </div>
 
     <!-- ── Categories section ── -->
@@ -721,6 +760,11 @@
     var _pAddon = 'all';
     var _addonCatIds = new Set();
 
+    /* ── Pagination state ── */
+    var _currentPage  = 1;
+    var _perPage      = 10;
+    var _filteredRows = [];
+
     var SWATCH_COLORS = [
         '#f5c518','#4ecca3','#cc3333','#3a86ff','#ff6b6b',
         '#a8dadc','#e9c46a','#f4a261','#2a9d8f','#888888'
@@ -736,18 +780,22 @@
 
     function saveFilterState() {
         var state = {
-            search: document.getElementById('searchBar').value || '',
-            sort:   _pSort,
-            stock:  _pStock,
-            addon:  _pAddon,
-            cat:    (document.getElementById('catFilterSelect') || {value:''}).value || '',
+            search:  document.getElementById('searchBar').value || '',
+            sort:    _pSort,
+            stock:   _pStock,
+            addon:   _pAddon,
+            cat:     (document.getElementById('catFilterSelect') || {value:''}).value || '',
+            perPage: _perPage,
         };
         sessionStorage.setItem(_SS_KEY, JSON.stringify(state));
     }
 
     function restoreFilterState() {
         var raw = sessionStorage.getItem(_SS_KEY);
-        if (!raw) return;
+        if (!raw) {
+            applyProductFilters();  /* no saved state — still init pagination */
+            return;
+        }
         sessionStorage.removeItem(_SS_KEY);
 
         var state;
@@ -783,6 +831,13 @@
             if (sb4) sb4.classList.add('active');
         }
 
+        /* Restore per-page */
+        if (state.perPage) {
+            _perPage = parseInt(state.perPage) || 10;
+            var ppSel = document.getElementById('perPageSelect');
+            if (ppSel) ppSel.value = String(_perPage);
+        }
+
         /* Category restored inside loadCategories() after dropdown is populated */
         window._pendingCatRestore = state.cat || '';
 
@@ -793,7 +848,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         loadCategories();   /* restoreFilterState() called inside after cat dropdown ready */
         buildSwatches();
-        loadAddons();
+        /* loadAddons() is called at the end of loadCategories() so allCategories is ready */
         loadAllIngredients();
     });
 
@@ -836,6 +891,9 @@
                 /* First load with no saved state — still run filters to apply defaults */
                 restoreFilterState();
             }
+
+            /* Load add-ons now that allCategories is populated */
+            loadAddons();
         });
     }
 
@@ -1324,30 +1382,35 @@
 
     /* ── Filter / Sort ── */
     function applyProductFilters() {
+        _currentPage = 1;  /* reset to page 1 on any filter change */
+        _buildFilteredRows();
+        renderPage();
+    }
+
+    function _buildFilteredRows() {
         var search = document.getElementById('searchBar').value.toLowerCase();
         var catVal = (document.getElementById('catFilterSelect') || {value: ''}).value;
         var rows   = Array.from(document.querySelectorAll('#tableBody tr'));
 
-        rows.forEach(function(row) {
+        /* Filter */
+        var visible = rows.filter(function(row) {
             var name   = row.getAttribute('data-name') || '';
             var cat    = row.getAttribute('data-cat')  || '';
             var status = row.getAttribute('data-status') || '';
 
             var nameOk  = name.includes(search);
-            var catOk   = !catVal || cat === catVal;
+            /* catOk: match exact category OR any child of selected parent category */
+            var catOk   = !catVal || cat === catVal || _getMainCatId(cat) === catVal;
             var stockOk = _pStock === 'all' || status === _pStock;
             var mainCat = cat ? _getMainCatId(cat) : null;
             var addonOk = _pAddon === 'all' ||
                           (_pAddon === 'yes' && mainCat && _addonCatIds.has(mainCat)) ||
                           (_pAddon === 'no'  && (!mainCat || !_addonCatIds.has(mainCat)));
 
-            row.style.display = (nameOk && catOk && stockOk && addonOk) ? '' : 'none';
+            return nameOk && catOk && stockOk && addonOk;
         });
 
-        /* Sort visible rows */
-        var tbody   = document.getElementById('tableBody');
-        var visible = rows.filter(function(r) { return r.style.display !== 'none'; });
-
+        /* Sort */
         visible.sort(function(a, b) {
             switch (_pSort) {
                 case 'az':         return (a.getAttribute('data-name')  || '').localeCompare(b.getAttribute('data-name') || '');
@@ -1360,7 +1423,94 @@
             }
         });
 
-        visible.forEach(function(r) { tbody.appendChild(r); });
+        _filteredRows = visible;
+
+        /* Hide ALL rows first; renderPage() will show the correct slice */
+        Array.from(document.querySelectorAll('#tableBody tr')).forEach(function(r) {
+            r.style.display = 'none';
+        });
+    }
+
+    function renderPage() {
+        var total      = _filteredRows.length;
+        var totalPages = Math.max(1, Math.ceil(total / _perPage));
+        if (_currentPage > totalPages) _currentPage = totalPages;
+
+        var start = (_currentPage - 1) * _perPage;
+        var end   = Math.min(start + _perPage, total);
+
+        /* Show only rows for this page */
+        var tbody = document.getElementById('tableBody');
+        _filteredRows.forEach(function(r, i) {
+            r.style.display = (i >= start && i < end) ? '' : 'none';
+            tbody.appendChild(r);  /* keep DOM order matching sort */
+        });
+
+        /* Update pagination bar */
+        var bar = document.getElementById('paginationBar');
+        if (!bar) return;
+
+        if (total === 0) {
+            bar.style.display = 'none';
+            return;
+        }
+        bar.style.display = '';
+
+        var info = document.getElementById('paginationInfo');
+        if (info) info.textContent = 'Showing ' + (start + 1) + '–' + end + ' of ' + total + ' products';
+
+        /* Sync per-page dropdown */
+        var ppSel = document.getElementById('perPageSelect');
+        if (ppSel) ppSel.value = String(_perPage);
+
+        /* Build page buttons */
+        var ctrl = document.getElementById('paginationControls');
+        if (!ctrl) return;
+        var html = '';
+        html += '<button class="page-btn" onclick="goToPage(' + (_currentPage - 1) + ')"' +
+                (_currentPage <= 1 ? ' disabled' : '') + '>‹</button>';
+
+        /* Show at most 7 page buttons with ellipsis */
+        var pageNums = [];
+        if (totalPages <= 7) {
+            for (var i = 1; i <= totalPages; i++) pageNums.push(i);
+        } else {
+            pageNums.push(1);
+            if (_currentPage > 3) pageNums.push('…');
+            for (var j = Math.max(2, _currentPage - 1); j <= Math.min(totalPages - 1, _currentPage + 1); j++) {
+                pageNums.push(j);
+            }
+            if (_currentPage < totalPages - 2) pageNums.push('…');
+            pageNums.push(totalPages);
+        }
+
+        pageNums.forEach(function(n) {
+            if (n === '…') {
+                html += '<span style="color:var(--text-dim);padding:0 4px;">…</span>';
+            } else {
+                html += '<button class="page-btn' + (n === _currentPage ? ' active' : '') +
+                        '" onclick="goToPage(' + n + ')">' + n + '</button>';
+            }
+        });
+
+        html += '<button class="page-btn" onclick="goToPage(' + (_currentPage + 1) + ')"' +
+                (_currentPage >= totalPages ? ' disabled' : '') + '>›</button>';
+
+        ctrl.innerHTML = html;
+    }
+
+    function goToPage(n) {
+        var total      = _filteredRows.length;
+        var totalPages = Math.max(1, Math.ceil(total / _perPage));
+        if (n < 1 || n > totalPages) return;
+        _currentPage = n;
+        renderPage();
+    }
+
+    function setPerPage(val) {
+        _perPage = parseInt(val) || 10;
+        _currentPage = 1;
+        renderPage();
     }
 
     function setSort(val, btn) {
