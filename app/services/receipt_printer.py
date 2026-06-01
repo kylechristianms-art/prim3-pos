@@ -52,6 +52,63 @@ def _send(printer_name: str, data: bytes):
         win32print.ClosePrinter(h)
 
 
+# ── Shared word-wrap utility ──────────────────────────────────────
+def _word_wrap(text: str, width: int, indent: int = 0) -> list[str]:
+    """
+    Wrap `text` to `width` characters, breaking only on word boundaries.
+    The first line uses `width` chars; continuation lines are indented
+    by `indent` spaces and use `width - indent` chars.
+    Returns a list of lines (no trailing newline on each).
+    """
+    words = text.split()
+    if not words:
+        return [""]
+
+    lines = []
+    current = ""
+    first_line = True
+
+    for word in words:
+        avail = width if first_line else width - indent
+        prefix = "" if first_line else " " * indent
+
+        if not current:
+            # Start of a new line — if the single word is longer than
+            # the available width, force-break it (last resort).
+            if len(word) > avail:
+                while len(word) > avail:
+                    lines.append(prefix + word[:avail])
+                    word = word[avail:]
+                    first_line = False
+                    prefix = " " * indent
+                    avail = width - indent
+                current = word
+            else:
+                current = word
+        else:
+            test = current + " " + word
+            if len(test) <= avail:
+                current = test
+            else:
+                lines.append(("" if first_line else " " * indent) + current)
+                first_line = False
+                # Start fresh continuation line; same word-too-long guard
+                avail = width - indent
+                prefix = " " * indent
+                if len(word) > avail:
+                    while len(word) > avail:
+                        lines.append(prefix + word[:avail])
+                        word = word[avail:]
+                    current = word
+                else:
+                    current = word
+
+    if current:
+        lines.append(("" if first_line else " " * indent) + current)
+
+    return lines
+
+
 def _build_receipt_text(data: dict) -> bytes:
     W = 32  # 58mm thermal = 31 chars
 
@@ -60,7 +117,7 @@ def _build_receipt_text(data: dict) -> bytes:
     GS           = "\x1d"
     BOLD_ON      = ESC + "\x45\x01"
     BOLD_OFF     = ESC + "\x45\x00"
-    WIDE_ON      = ESC + "\x21\x30"   # double width + double height ← changed
+    WIDE_ON      = ESC + "\x21\x30"
     WIDE_OFF     = ESC + "\x21\x00"
     ALIGN_LEFT   = ESC + "\x61\x00"
     ALIGN_CENTER = ESC + "\x61\x01"
@@ -94,17 +151,26 @@ def _build_receipt_text(data: dict) -> bytes:
         return f"{label[:max_lw]:<{max_lw}}{value}"
 
     def item_row(name, qty, price_str, indent=0):
-        prefix = " " * indent
-        name_w = COL_ITEM - indent
-        chunks = [name[i:i+name_w] for i in range(0, max(len(name), 1), name_w)]
+        """
+        Render an item row with proper word-wrapping.
+        First line: name (COL_ITEM chars) | qty (COL_QTY) | price (COL_PRICE)
+        Continuation lines: indented name overflow only.
+        """
+        avail_name = COL_ITEM - indent
+        prefix     = " " * indent
+
+        # Word-wrap the name into avail_name-wide chunks
+        name_lines = _word_wrap(name, avail_name)
+
         out_lines = []
-        for idx, chunk in enumerate(chunks):
+        for idx, chunk in enumerate(name_lines):
             if idx == 0:
-                name_col  = f"{prefix}{chunk:<{name_w}}"
+                name_col  = f"{prefix}{chunk:<{avail_name}}"
                 qty_col   = f"{qty:^{COL_QTY}}"
                 price_col = f"{price_str:>{COL_PRICE}}"
                 out_lines.append(name_col + qty_col + price_col)
             else:
+                # Continuation: pad full COL_ITEM + COL_QTY + COL_PRICE to keep alignment
                 out_lines.append(f"{prefix}{chunk}")
         return "\n".join(out_lines)
 
@@ -168,7 +234,7 @@ def _build_receipt_text(data: dict) -> bytes:
     t("\n\n")
 
     t(ALIGN_LEFT + divider("=") + "\n")
-    t(f"Sale #  : {data.get('sale_id', 'N/A')}\n")
+    t(f"Sale    : #{data.get('sale_id', 'N/A')}\n")
     t(f"Cashier : {data.get('cashier', '')}\n")
     t(f"Date    : {data.get('timestamp', '')}\n")
     t(divider() + "\n")
@@ -211,11 +277,10 @@ def _build_receipt_text(data: dict) -> bytes:
             t(rjust_row(f"  {disc_label}:", f"-P{item_disc:.2f}") + "\n")
 
         if item.get("notes"):
-            raw_note = f"  Note: {item['notes']}"
-            while len(raw_note) > W:
-                t(raw_note[:W] + "\n")
-                raw_note = "    " + raw_note[W:]
-            t(raw_note + "\n")
+            # Word-wrap notes too, indented by 2
+            note_text = f"Note: {item['notes']}"
+            for line in _word_wrap(note_text, W - 2):
+                t("  " + line + "\n")
 
     t(divider() + "\n")
 
@@ -253,7 +318,7 @@ def _build_receipt_text(data: dict) -> bytes:
     t(word_wrap_center("Please keep this receipt for your records.") + "\n")
     t(word_wrap_center("Receipts over P100.00 can redeem a loyalty card.") + "\n")
     t(divider() + "\n")
-    t(word_wrap_center("Powered by PRIM3 TECH") + "\n")
+    t(word_wrap_center("Powered by Prim3 Technologies") + "\n")
     t(ALIGN_LEFT + "\n")
 
     # ── Feed & cut ─────────────────────────────────────────────────
@@ -330,33 +395,36 @@ def print_kitchen(data: dict, printer: str):
             name = item.get("name", "")
             qty  = int(item.get("qty", 1))
 
-            name_chunks = [name[i:i+COL_ITEM] for i in range(0, max(len(name), 1), COL_ITEM)]
-            for idx, chunk in enumerate(name_chunks):
+            # Word-wrap name to COL_ITEM width
+            name_lines = _word_wrap(name, COL_ITEM)
+
+            for idx, chunk in enumerate(name_lines):
                 if idx == 0:
                     qty_str = ("x" + str(qty)).center(COL_QTY)
                     t(ITEM_ON + f"{chunk:<{COL_ITEM}}{qty_str}" + ITEM_OFF + "\n")
                 else:
-                    t(ITEM_ON + f"{chunk}" + ITEM_OFF + "\n")
+                    # Continuation lines: pad to full width so printer doesn't mis-align
+                    t(ITEM_ON + f"{chunk:<{COL_ITEM}}{' ' * COL_QTY}" + ITEM_OFF + "\n")
 
-            # Per-item note — immediately under item
+            # Per-item note — immediately under item; word-wrap indented
             if item.get("notes"):
-                raw_note = f"  NOTE: {item['notes']}"
-                while len(raw_note) > W:
-                    t(raw_note[:W] + "\n")
-                    raw_note = "    " + raw_note[W:]
-                t(raw_note + "\n")
+                note_text = f"NOTE: {item['notes']}"
+                for line in _word_wrap(note_text, W - 2):
+                    t("  " + line + "\n")
 
-            # Add-ons — immediately under note
+            # Add-ons — immediately under note; word-wrap indented by 4
             for addon in item.get("addons", []):
-                aname = f"  + {addon.get('name', '')}"
+                aname = f"+ {addon.get('name', '')}"
                 aqty  = int(addon.get("qty", 1))
-                aname_chunks = [aname[i:i+COL_ITEM] for i in range(0, max(len(aname), 1), COL_ITEM)]
-                for idx, chunk in enumerate(aname_chunks):
+                addon_avail = COL_ITEM - 4  # 4-char indent: "  + "
+                addon_lines = _word_wrap(aname, addon_avail)
+                for idx, chunk in enumerate(addon_lines):
                     if idx == 0:
                         aqty_str = ("x" + str(aqty)).center(COL_QTY)
-                        t(f"{chunk:<{COL_ITEM}}{aqty_str}\n")
+                        # indent=2 spaces before the "+ name" block
+                        t(f"  {chunk:<{addon_avail}}{' ' * 2}{aqty_str}\n")
                     else:
-                        t(f"{chunk}\n")
+                        t(f"  {chunk}\n")
 
             # Single blank line after full item block
             t("\n")
@@ -365,11 +433,8 @@ def print_kitchen(data: dict, printer: str):
         if order_notes:
             t(divider() + "\n")
             t(BOLD_ON + "ORDER NOTES:\n" + BOLD_OFF)
-            raw = order_notes
-            while len(raw) > W:
-                t(raw[:W] + "\n")
-                raw = "  " + raw[W:]
-            t(raw + "\n")
+            for line in _word_wrap(order_notes, W - 2):
+                t("  " + line + "\n")
 
         # ── Footer ────────────────────────────────────────────────
         t(divider("=") + "\n")
@@ -377,8 +442,6 @@ def print_kitchen(data: dict, printer: str):
         t(BOLD_ON + "*** END OF ORDER ***" + BOLD_OFF + "\n")
         t(ALIGN_LEFT)
 
-        # Feed enough lines to clear the cutter, then send a clean
-        # full-cut as raw bytes — never encode ESC/POS through utf-8
         t("\n" * 8)
         b(b"\x1d\x56\x00")   # GS V 0 — full cut, raw bytes, no encoding
 
