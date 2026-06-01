@@ -1,0 +1,5 @@
+ID,Label,Subtotal,Discount,Total,Payment,Type,Status,Created At,Void Reason,Void Resolution
+1,Sale #25,248.00,0.00,248.00,gcash,dine_in,COMPLETED,2026-04-30 09:52,,
+2,Sale #26,487.00,0.00,487.00,card,dine_in,COMPLETED,2026-05-01 10:41,,
+3,tite,372.00,0.00,372.00,gcash,dine_in,VOIDED,2026-05-09 11:56,ghjkl;,
+4,Test,294.00,0.00,294.00,cash,dine_in,COMPLETED,2026-06-01 05:33,,

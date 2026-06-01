@@ -5,7 +5,7 @@ import os
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required, current_user
 from database import db, Sale, SaleItem, Product, SavedOrder, User
-from app.services.order_service import calculate_total, normalize_cart, serialize_order
+from app.services.order_service import calculate_total, normalize_cart, serialize_order, calculate_cart_with_item_discounts
 from app.services.payment_service import calculate_change
 from app.services.audit_service import log_action
 from app.services.inventory_service import deduct_for_sale
@@ -25,10 +25,14 @@ def checkout():
             return jsonify({"success": False, "error": "Cart is empty"})
 
         discount_amount = float(data.get("discount_amount", 0))
+        discount_type   = data.get("discount_type", "")
         payment_method  = data.get("payment_method", "cash")
         cash_received   = float(data.get("cash_received", 0))
 
-        subtotal, total_discount, total = calculate_total(cart, discount_amount)
+        # Enrich cart items with per-item discount amounts for the receipt
+        enriched_cart = calculate_cart_with_item_discounts(cart, discount_amount)
+
+        subtotal, total_discount, total = calculate_total(enriched_cart, discount_amount)
         change = calculate_change(total, cash_received, payment_method)
 
         sale = Sale(
@@ -41,7 +45,7 @@ def checkout():
         db.session.add(sale)
         db.session.flush()
 
-        for item in cart:
+        for item in enriched_cart:
             db.session.add(SaleItem(
                 sale_id=sale.id,
                 product_id=item["id"],
@@ -49,31 +53,29 @@ def checkout():
                 quantity=item["qty"],
                 price=item["price"],
             ))
-            # Deduct product-level stock
             product = db.session.get(Product, item["id"])
             if product:
                 product.quantity = max(0, product.quantity - item["qty"])
 
         db.session.commit()
 
-        # ── Deduct ingredient-level stock ─────────────────────────
         deduct_for_sale(cart, current_user.id)
-
         log_action(current_user.id, "CHECKOUT", f"Sale #{sale.id} total ₱{total}")
 
-        now = datetime.utcnow()
+        now = datetime.now()
         return jsonify({
             "success":         True,
             "sale_id":         sale.id,
             "subtotal":        subtotal,
             "discount_amount": total_discount,
+            "discount_type":   discount_type,
             "total":           total,
             "change":          change,
             "cash_received":   cash_received,
             "payment_method":  payment_method,
             "cashier":         current_user.name,
             "timestamp":       now.strftime("%b %d, %Y %I:%M %p"),
-            "items":           cart,
+            "items":           enriched_cart,
         })
     except Exception as e:
         db.session.rollback()
@@ -255,7 +257,7 @@ def clear_orders():
             o.void_reason or "", o.void_resolution or "",
         ])
 
-    filename   = f"orders_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+    filename   = f"orders_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     export_dir = os.path.join(current_app.root_path, "static", "exports")
     os.makedirs(export_dir, exist_ok=True)
     with open(os.path.join(export_dir, filename), "w", newline="", encoding="utf-8") as f:

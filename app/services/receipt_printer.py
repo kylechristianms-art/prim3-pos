@@ -52,51 +52,222 @@ def _send(printer_name: str, data: bytes):
         win32print.ClosePrinter(h)
 
 
-# ── Receipt text builder ──────────────────────────────────────────
-def _build_receipt_text(data: dict) -> str:
-    lines = [
-        f"SALE #{data.get('sale_id', 'N/A')}",
-        "=" * 32,
-        f"Cashier : {data.get('cashier', '')}",
-        f"Date    : {data.get('timestamp', '')}",
-        "-" * 32,
-    ]
+def _build_receipt_text(data: dict) -> bytes:
+    W = 32  # 58mm thermal = 31 chars
 
+    # ── ESC/POS commands ───────────────────────────────────────────
+    ESC          = "\x1b"
+    GS           = "\x1d"
+    BOLD_ON      = ESC + "\x45\x01"
+    BOLD_OFF     = ESC + "\x45\x00"
+    WIDE_ON      = ESC + "\x21\x30"   # double width + double height ← changed
+    WIDE_OFF     = ESC + "\x21\x00"
+    ALIGN_LEFT   = ESC + "\x61\x00"
+    ALIGN_CENTER = ESC + "\x61\x01"
+    FEED_AND_CUT = GS  + "\x56\x41\x50"
+
+    # ── Column widths: ITEM=20 | QTY=3 | PRICE=8 → sum=31 ─────────
+    COL_ITEM  = 20
+    COL_QTY   = 3
+    COL_PRICE = W - COL_ITEM - COL_QTY  # = 8
+
+    def word_wrap_center(text):
+        words = text.split()
+        lines_out, current = [], ""
+        for word in words:
+            test = (current + " " + word).strip()
+            if len(test) <= W:
+                current = test
+            else:
+                if current:
+                    lines_out.append(current.center(W))
+                current = word
+        if current:
+            lines_out.append(current.center(W))
+        return "\n".join(lines_out)
+
+    def divider(char="-"):
+        return char * W
+
+    def rjust_row(label, value):
+        max_lw = W - len(value)
+        return f"{label[:max_lw]:<{max_lw}}{value}"
+
+    def item_row(name, qty, price_str, indent=0):
+        prefix = " " * indent
+        name_w = COL_ITEM - indent
+        chunks = [name[i:i+name_w] for i in range(0, max(len(name), 1), name_w)]
+        out_lines = []
+        for idx, chunk in enumerate(chunks):
+            if idx == 0:
+                name_col  = f"{prefix}{chunk:<{name_w}}"
+                qty_col   = f"{qty:^{COL_QTY}}"
+                price_col = f"{price_str:>{COL_PRICE}}"
+                out_lines.append(name_col + qty_col + price_col)
+            else:
+                out_lines.append(f"{prefix}{chunk}")
+        return "\n".join(out_lines)
+
+    # ── Logo (ESC/POS raster bit-image) ───────────────────────────
+    def _logo_bytes() -> bytes:
+        import os
+        logo_path = os.path.join(
+            os.path.dirname(__file__),
+            "..", "static", "logo.bmp"
+        )
+        logo_path = os.path.normpath(logo_path)
+        if not os.path.exists(logo_path):
+            return b""
+        try:
+            from PIL import Image
+            img = Image.open(logo_path).convert("1")
+            img_width, img_height = img.size
+            row_bytes = (img_width + 7) // 8
+            header = (
+                b"\x1d\x76\x30\x00"
+                + bytes([row_bytes & 0xFF, (row_bytes >> 8) & 0xFF])
+                + bytes([img_height & 0xFF, (img_height >> 8) & 0xFF])
+            )
+            pixels = img.load()
+            raster = bytearray()
+            for y in range(img_height):
+                for byte_x in range(row_bytes):
+                    byte = 0
+                    for bit in range(8):
+                        x = byte_x * 8 + bit
+                        if x < img_width:
+                            if pixels[x, y] == 0:
+                                byte |= (0x80 >> bit)
+                    raster.append(byte)
+            return header + bytes(raster)
+        except Exception:
+            return b""
+
+    # ── Build receipt as bytes ─────────────────────────────────────
+    parts = []
+
+    def t(text):
+        parts.append(text.encode("utf-8"))
+
+    def b(raw_bytes):
+        parts.append(raw_bytes)
+
+    # ── Header ────────────────────────────────────────────────────
+    logo_data = _logo_bytes()
+    if logo_data:
+        b(ALIGN_CENTER.encode("utf-8"))
+        b(logo_data)
+        t("\n")
+    else:
+        t(ALIGN_CENTER + "[LOGO]\n")
+
+    t(ALIGN_CENTER)
+    t(BOLD_ON)
+    t("SALES INVOICE")
+    t(BOLD_OFF)
+    t("\n\n")
+
+    t(ALIGN_LEFT + divider("=") + "\n")
+    t(f"Sale #  : {data.get('sale_id', 'N/A')}\n")
+    t(f"Cashier : {data.get('cashier', '')}\n")
+    t(f"Date    : {data.get('timestamp', '')}\n")
+    t(divider() + "\n")
+
+    # ── Column headers ─────────────────────────────────────────────
+    item_h  = f"{'ITEM':^{COL_ITEM}}"
+    qty_h   = f"{'QTY':^{COL_QTY}}"
+    price_h = f"{'PRICE':>{COL_PRICE}}"
+    t(item_h + qty_h + price_h + "\n")
+    t(divider() + "\n")
+
+    # ── Items ──────────────────────────────────────────────────────
     for item in data.get("items", []):
+        name  = item.get("name", "")
         qty   = int(item.get("qty", 1))
         price = float(item.get("price", 0))
-        disc  = float(item.get("discount", 0))
-        total = price * qty - disc
-        lines.append(f"{item.get('name')} x{qty}  P{total:.2f}")
+
+        item_disc = float(
+            item.get("discount") or
+            item.get("discount_amount") or
+            item.get("item_discount") or
+            0
+        )
+
+        t(item_row(name, qty, f"P{price:.2f}") + "\n")
+
         for addon in item.get("addons", []):
-            aqty = int(addon.get("qty", 1))
-            lines.append(f"  + {addon.get('name')} x{aqty}  P{float(addon.get('price', 0)):.2f}")
+            aname  = f"+ {addon.get('name', '')}"
+            aqty   = int(addon.get("qty", 1))
+            aprice = float(addon.get("price", 0))
+            t(item_row(aname, aqty, f"P{aprice:.2f}", indent=2) + "\n")
+
+        if item_disc > 0:
+            disc_label = (
+                item.get("discount_type") or
+                item.get("discount_label") or
+                data.get("discount_type") or
+                "Discount"
+            )
+            t(rjust_row(f"  {disc_label}:", f"-P{item_disc:.2f}") + "\n")
+
         if item.get("notes"):
-            lines.append(f"  Note: {item['notes']}")
+            raw_note = f"  Note: {item['notes']}"
+            while len(raw_note) > W:
+                t(raw_note[:W] + "\n")
+                raw_note = "    " + raw_note[W:]
+            t(raw_note + "\n")
 
-    lines.append("-" * 32)
+    t(divider() + "\n")
 
-    disc_amt = float(data.get("discount_amount", 0))
-    if disc_amt:
-        lines.append(f"Subtotal: P{float(data.get('subtotal', 0)):.2f}")
-        lines.append(f"Discount: -P{disc_amt:.2f}")
+    # ── Totals ─────────────────────────────────────────────────────
+    order_disc = float(data.get("discount_amount") or 0)
+    order_disc_label = (
+        data.get("discount_type") or
+        data.get("discount_label") or
+        "Discount"
+    )
 
-    lines.append(f"TOTAL   : P{float(data.get('total', 0)):.2f}")
-    lines.append(f"Payment : {data.get('payment_method', '').upper()}")
+    if order_disc > 0:
+        subtotal = float(data.get("subtotal") or 0)
+        t(rjust_row("Subtotal:", f"P{subtotal:.2f}") + "\n")
+        t(rjust_row(f"{order_disc_label}:", f"-P{order_disc:.2f}") + "\n")
+
+    total = float(data.get("total") or 0)
+    t(BOLD_ON + rjust_row("TOTAL:", f"P{total:.2f}") + BOLD_OFF + "\n")
+    t(divider() + "\n")
+
+    # ── Payment ────────────────────────────────────────────────────
+    method = data.get("payment_method", "").upper()
+    t(rjust_row("Payment:", method) + "\n")
 
     if str(data.get("payment_method", "")).lower() == "cash":
-        lines.append(f"Cash    : P{float(data.get('cash_received', 0)):.2f}")
-        lines.append(f"Change  : P{float(data.get('change', 0)):.2f}")
+        cash   = float(data.get("cash_received") or 0)
+        change = float(data.get("change") or 0)
+        t(rjust_row("Cash:", f"P{cash:.2f}") + "\n")
+        t(rjust_row("Change:", f"P{change:.2f}") + "\n")
 
-    lines += ["=" * 32, "Thank you!", "\n\n\n"]
-    return "\n".join(lines)
+    # ── Footer ─────────────────────────────────────────────────────
+    t(divider("=") + "\n")
+    t(ALIGN_CENTER + "\n")
+    t(word_wrap_center("Thank you for your purchase!") + "\n")
+    t(word_wrap_center("Please keep this receipt for your records.") + "\n")
+    t(word_wrap_center("Receipts over P100.00 can redeem a loyalty card.") + "\n")
+    t(divider() + "\n")
+    t(word_wrap_center("Powered by PRIM3 TECH") + "\n")
+    t(ALIGN_LEFT + "\n")
+
+    # ── Feed & cut ─────────────────────────────────────────────────
+    t("\n" * 6)
+    b(FEED_AND_CUT.encode("utf-8"))
+
+    return b"".join(parts)
 
 
 # ── Public print functions ────────────────────────────────────────
 def print_receipt(data: dict, printer: str):
     try:
-        text = _build_receipt_text(data)
-        _send(printer, text.encode("utf-8"))
+        raw = _build_receipt_text(data)
+        _send(printer, raw)
         return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
