@@ -961,18 +961,13 @@
 
         btn.classList.add('selected', 'expanded');
         _expandedMainCat = catId;
-        selectedCategory = String(catId);
+        selectedCategory = String(catId);  // show all products in parent + children
 
         var subs = _CAT_CHILDREN[catId] || [];
         if (subs.length > 0) {
-            var firstSelected = false;
             subs.forEach(function (sub) {
                 var subBtn = document.createElement('button');
-                subBtn.className = 'category-btn sub-btn' + (!firstSelected ? ' selected' : '');
-                if (!firstSelected) {
-                    selectedCategory = String(sub.id);
-                    firstSelected = true;
-                }
+                subBtn.className = 'category-btn sub-btn';  // none selected by default
                 subBtn.textContent = sub.name;
                 subBtn.onclick = function () {
                     subRow.querySelectorAll('.category-btn').forEach(function (b) { b.classList.remove('selected'); });
@@ -995,10 +990,14 @@
             var catId     = btn.getAttribute('data-category') || '';
             var catMatch;
             if (selectedCategory === null) {
+                // "All" selected
                 catMatch = true;
             } else if (_expandedMainCat !== null && selectedCategory === String(_expandedMainCat)) {
-                catMatch = catId === String(_expandedMainCat);
+                // Parent selected, no sub chosen — show parent products AND all sub-category products
+                var childIds = (_CAT_CHILDREN[_expandedMainCat] || []).map(function(c) { return String(c.id); });
+                catMatch = catId === String(_expandedMainCat) || childIds.indexOf(catId) !== -1;
             } else {
+                // A specific sub-category is selected
                 catMatch = catId === String(selectedCategory);
             }
             btn.style.display = (nameMatch && catMatch) ? 'block' : 'none';

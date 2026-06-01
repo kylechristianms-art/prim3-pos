@@ -74,7 +74,7 @@ def checkout():
             "cashier":         current_user.name,
             "timestamp":       now.strftime("%b %d, %Y %I:%M %p"),
             "items":           enriched_cart,
-            "kitchen_notes":   data.get("kitchen_notes", ""),  # ← THIS was the missing line
+            "kitchen_notes":   data.get("kitchen_notes", ""),
         })
     except Exception as e:
         db.session.rollback()
