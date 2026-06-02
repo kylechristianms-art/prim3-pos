@@ -247,15 +247,295 @@
     applyTheme(localStorage.getItem(THEME_KEY)!=='light');
 
     var voidOrderId=null,voidPinBuffer='',voidAuthorizedPin='';
-    function loadOrders(){fetch('/saved_orders',{cache:'no-store'}).then(function(r){return r.json();}).then(function(data){if(!data.success){return;}var active=data.orders.filter(function(o){return!o.is_void&&!o.is_completed;});var completed=data.orders.filter(function(o){return!o.is_void&&o.is_completed;});var voided=data.orders.filter(function(o){return o.is_void;});document.getElementById('activeCount').textContent=active.length;document.getElementById('completedCount').textContent=completed.length;document.getElementById('voidedCount').textContent=voided.length;renderSection('activeOrders',active,'active');renderSection('completedOrders',completed,'completed');renderSection('voidedOrders',voided,'voided');}).catch(function(err){console.error(err);});}
-    function renderSection(elId,orders,type){var el=document.getElementById(elId);if(!orders.length){var labels={active:'No active orders.',completed:'No completed transactions yet.',voided:'No voided orders.'};el.innerHTML='<div class="empty-col">'+labels[type]+'</div>';return;}el.innerHTML=orders.map(function(o){return buildCard(o,type);}).join('');}
-    function buildCard(o,type){var total=parseFloat(o.total)||0;var typeBadge=o.order_type==='dine_in'?'<span class="type-badge type-dine">Dine In</span>':'<span class="type-badge type-take">Take Out</span>';var statusBadge='';if(type==='voided')statusBadge='<span class="void-badge">VOIDED</span>';if(type==='completed')statusBadge='<span class="completed-badge">✅ DONE</span>';var receiptItems=o.cart.map(function(item){var lineTotal=(parseFloat(item.price)||0)*(parseInt(item.qty)||0)-(parseFloat(item.discount)||0);return'<div class="mini-receipt-item"><span>'+escHtml(item.name)+' x'+item.qty+'</span><span>₱'+lineTotal.toFixed(2)+'</span></div>';}).join('');var discountRow='';if(parseFloat(o.discount_amount)>0){discountRow='<div class="mini-receipt-row"><span>Discount</span><span>-₱'+parseFloat(o.discount_amount).toFixed(2)+'</span></div>';}var voidInfoHtml='';if(type==='voided'&&o.void_reason){voidInfoHtml='<div class="void-info"><div class="void-info-label">🚫 VOIDED</div><div class="void-info-row"><strong>Reason:</strong> '+escHtml(o.void_reason)+'</div>'+(o.void_resolution?'<div class="void-info-row"><strong>Resolution:</strong> '+escHtml(o.void_resolution)+'</div>':'')+'</div>';}var actionsHtml='';if(type==='active'){actionsHtml='<div class="order-actions"><button class="btn-edit-order" onclick="editOrder('+o.id+')">✏️ Edit</button><button class="btn-save-pdf" onclick="savePdfAndComplete('+o.id+',this)">📄 Save PDF</button><button class="btn-void-order" onclick="openVoidModal('+o.id+',\''+escAttr(o.label)+'\')">🚫 Void</button></div>';}else if(type==='completed'){actionsHtml='<div class="order-actions"><button class="btn-save-pdf" onclick="savePdfCompleted('+o.id+','+JSON.stringify(o)+',this)">📄 Save PDF</button></div>';}return'<div class="order-card '+type+'" id="order-card-'+o.id+'"><div class="order-header" onclick="toggleOrder('+o.id+')"><span class="order-expand-icon">▶</span><div class="order-label">'+escHtml(o.label)+statusBadge+'</div><div>'+typeBadge+'</div><div class="order-total">₱'+total.toFixed(2)+'</div></div><div class="order-body"><div class="order-meta" style="padding-top:10px;font-size:11px;color:var(--text-muted);">'+o.created_at+' · '+o.cart.length+' item(s) · '+o.payment_method.toUpperCase()+'</div><div class="mini-receipt"><div class="mini-receipt-header"><img src="/static/logo.png" class="mini-receipt-logo-img" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'"><div class="mini-receipt-logo" style="display:none;">SUPREMACY INTL</div><div class="mini-receipt-sub">Sales Invoice · '+o.created_at+'</div></div><hr class="mini-receipt-divider"/>'+receiptItems+'<hr class="mini-receipt-divider"/>'+discountRow+'<div class="mini-receipt-total"><span>Total:</span><span>₱'+total.toFixed(2)+'</span></div><div class="mini-receipt-row"><span>Payment</span><span>'+o.payment_method.toUpperCase()+'</span></div>'+(o.kitchen_notes?'<div class="mini-receipt-row"><span>Notes</span><span style="font-style:italic;">'+escHtml(o.kitchen_notes)+'</span></div>':'')+'</div>'+voidInfoHtml+actionsHtml+'</div></div>';}
-    function toggleOrder(id){var card=document.getElementById('order-card-'+id);if(card)card.classList.toggle('open');}
-    function editOrder(id){window.location.href='/pos?order_id='+id;}
-    function savePdfAndComplete(orderId,btn){btn.disabled=true;btn.textContent='⏳ Generating...';fetch('/saved_orders',{cache:'no-store'}).then(function(r){return r.json();}).then(function(data){if(!data.success)throw new Error(data.error||'Failed');var order=(data.orders||[]).find(function(o){return o.id===orderId;});if(!order)throw new Error('Order not found');var saleData={sale_id:'ORD-'+order.id,cashier:'Order',timestamp:order.created_at,items:order.cart.map(function(i){return{name:i.name,qty:i.qty,price:i.price,discount:i.discount||0,notes:i.notes||''};}),subtotal:order.total+(order.discount_amount||0),discount_amount:order.discount_amount||0,total:order.total,payment_method:order.payment_method,cash_received:0,change:0};return fetch('/download_receipt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(saleData)});}).then(function(r){if(!r.ok)throw new Error('PDF failed');return r.blob();}).then(function(blob){var url=window.URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='order_'+orderId+'.pdf';document.body.appendChild(a);a.click();document.body.removeChild(a);window.URL.revokeObjectURL(url);return fetch('/saved_orders/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})});}).then(function(r){return r.json();}).then(function(d){if(!d.success)throw new Error(d.error||'Failed to complete');loadOrders();}).catch(function(err){alert('Error: '+(err.message||'Unknown'));btn.disabled=false;btn.textContent='📄 Save PDF';});}
-    function savePdfCompleted(orderId,order,btn){btn.disabled=true;btn.textContent='⏳ Generating...';var saleData={sale_id:'ORD-'+order.id,cashier:'Order',timestamp:order.created_at,items:order.cart.map(function(i){return{name:i.name,qty:i.qty,price:i.price,discount:i.discount||0,notes:i.notes||''};}),subtotal:order.total+(order.discount_amount||0),discount_amount:order.discount_amount||0,total:order.total,payment_method:order.payment_method,cash_received:0,change:0};fetch('/download_receipt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(saleData)}).then(function(r){return r.blob();}).then(function(blob){var url=window.URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='order_'+orderId+'.pdf';a.click();window.URL.revokeObjectURL(url);btn.disabled=false;btn.textContent='📄 Save PDF';}).catch(function(){btn.disabled=false;btn.textContent='📄 Save PDF';});}
+
+    function loadOrders(){
+        fetch('/saved_orders',{cache:'no-store'})
+            .then(function(r){return r.json();})
+            .then(function(data){
+                if(!data.success){return;}
+                var active    = data.orders.filter(function(o){return !o.is_void && !o.is_completed;});
+                var completed = data.orders.filter(function(o){return !o.is_void &&  o.is_completed;});
+                var voided    = data.orders.filter(function(o){return  o.is_void;});
+                document.getElementById('activeCount').textContent    = active.length;
+                document.getElementById('completedCount').textContent = completed.length;
+                document.getElementById('voidedCount').textContent    = voided.length;
+                renderSection('activeOrders',    active,    'active');
+                renderSection('completedOrders', completed, 'completed');
+                renderSection('voidedOrders',    voided,    'voided');
+            })
+            .catch(function(err){console.error(err);});
+    }
+
+    function renderSection(elId, orders, type){
+        var el = document.getElementById(elId);
+        if(!orders.length){
+            var labels = {active:'No active orders.',completed:'No completed transactions yet.',voided:'No voided orders.'};
+            el.innerHTML = '<div class="empty-col">'+labels[type]+'</div>';
+            return;
+        }
+        el.innerHTML = orders.map(function(o){return buildCard(o,type);}).join('');
+    }
+
+    function buildCard(o, type){
+        var total      = parseFloat(o.total) || 0;
+        var typeBadge  = o.order_type==='dine_in'
+            ? '<span class="type-badge type-dine">Dine In</span>'
+            : '<span class="type-badge type-take">Take Out</span>';
+        var statusBadge = '';
+        if(type==='voided')   statusBadge = '<span class="void-badge">VOIDED</span>';
+        if(type==='completed') statusBadge = '<span class="completed-badge">✅ DONE</span>';
+
+        var receiptItems = o.cart.map(function(item){
+            var lineTotal = (parseFloat(item.price)||0)*(parseInt(item.qty)||0) - (parseFloat(item.discount)||0);
+            return '<div class="mini-receipt-item"><span>'+escHtml(item.name)+' x'+item.qty+'</span><span>₱'+lineTotal.toFixed(2)+'</span></div>';
+        }).join('');
+
+        var discountRow = '';
+        if(parseFloat(o.discount_amount) > 0){
+            discountRow = '<div class="mini-receipt-row"><span>Discount</span><span>-₱'+parseFloat(o.discount_amount).toFixed(2)+'</span></div>';
+        }
+
+        var voidInfoHtml = '';
+        if(type==='voided' && o.void_reason){
+            voidInfoHtml = '<div class="void-info"><div class="void-info-label">🚫 VOIDED</div>'
+                + '<div class="void-info-row"><strong>Reason:</strong> '+escHtml(o.void_reason)+'</div>'
+                + (o.void_resolution ? '<div class="void-info-row"><strong>Resolution:</strong> '+escHtml(o.void_resolution)+'</div>' : '')
+                + '</div>';
+        }
+
+        var actionsHtml = '';
+        if(type==='active'){
+            actionsHtml = '<div class="order-actions">'
+                + '<button class="btn-edit-order" onclick="editOrder('+o.id+')">✏️ Edit</button>'
+                + '<button class="btn-save-pdf" onclick="savePdfAndComplete('+o.id+',this)">📄 Save PDF</button>'
+                + '<button class="btn-void-order" onclick="openVoidModal('+o.id+',\''+escAttr(o.label)+'\')">🚫 Void</button>'
+                + '</div>';
+        } else if(type==='completed'){
+            // Pass the order object as a JSON string attribute to avoid closure issues
+            actionsHtml = '<div class="order-actions">'
+                + '<button class="btn-save-pdf" onclick="savePdfCompleted('+o.id+',this)">📄 Save PDF</button>'
+                + '</div>';
+        }
+
+        return '<div class="order-card '+type+'" id="order-card-'+o.id+'" data-order=\''+escOrderData(o)+'\'>'
+            + '<div class="order-header" onclick="toggleOrder('+o.id+')">'
+            +   '<span class="order-expand-icon">▶</span>'
+            +   '<div class="order-label">'+escHtml(o.label)+statusBadge+'</div>'
+            +   '<div>'+typeBadge+'</div>'
+            +   '<div class="order-total">₱'+total.toFixed(2)+'</div>'
+            + '</div>'
+            + '<div class="order-body">'
+            +   '<div class="order-meta" style="padding-top:10px;font-size:11px;color:var(--text-muted);">'+o.created_at+' · '+o.cart.length+' item(s) · '+o.payment_method.toUpperCase()+'</div>'
+            +   '<div class="mini-receipt">'
+            +     '<div class="mini-receipt-header">'
+            +       '<img src="/static/logo.png" class="mini-receipt-logo-img" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">'
+            +       '<div class="mini-receipt-logo" style="display:none;">SUPREMACY INTL</div>'
+            +       '<div class="mini-receipt-sub">Sales Invoice · '+o.created_at+'</div>'
+            +     '</div>'
+            +     '<hr class="mini-receipt-divider"/>'
+            +     receiptItems
+            +     '<hr class="mini-receipt-divider"/>'
+            +     discountRow
+            +     '<div class="mini-receipt-total"><span>Total:</span><span>₱'+total.toFixed(2)+'</span></div>'
+            +     '<div class="mini-receipt-row"><span>Payment</span><span>'+o.payment_method.toUpperCase()+'</span></div>'
+            +     (o.kitchen_notes ? '<div class="mini-receipt-row"><span>Notes</span><span style="font-style:italic;">'+escHtml(o.kitchen_notes)+'</span></div>' : '')
+            +   '</div>'
+            +   voidInfoHtml
+            +   actionsHtml
+            + '</div>'
+            + '</div>';
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────
     function escHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
     function escAttr(str){return String(str).replace(/'/g,"&#39;").replace(/"/g,'&quot;');}
+
+    /**
+     * Safely embed the order object as a single-quoted HTML attribute value.
+     * JSON.stringify already escapes double quotes, so we only need to escape
+     * single quotes for the attribute delimiter.
+     */
+    function escOrderData(o){
+        return JSON.stringify(o).replace(/'/g,'&#39;');
+    }
+
+    /**
+     * Read the cached order data stored in the card's data-order attribute.
+     * Falls back to a live fetch when the card is no longer in the DOM
+     * (shouldn't happen, but defensive).
+     */
+    function getOrderFromCard(orderId){
+        var card = document.getElementById('order-card-'+orderId);
+        if(card){
+            try{ return JSON.parse(card.getAttribute('data-order')); }
+            catch(e){}
+        }
+        return null;
+    }
+
+    // ── Build the saleData payload for /download_receipt ──────────
+    function buildReceiptPayload(order){
+        /*
+         * subtotal = net total + discount  (reconstruct gross from what the
+         * server already gave us so we never double-subtract the discount)
+         */
+        var discAmt  = parseFloat(order.discount_amount) || 0;
+        var netTotal = parseFloat(order.total)           || 0;
+        var subtotal = parseFloat(order.subtotal)        || (netTotal + discAmt);
+
+        return {
+            sale_id:         'ORD-' + order.id,
+            cashier:         'Order',
+            timestamp:       order.created_at,
+            items:           (order.cart || []).map(function(i){
+                return {
+                    name:     i.name,
+                    qty:      i.qty,
+                    price:    i.price,
+                    discount: i.discount  || 0,
+                    notes:    i.notes     || ''
+                };
+            }),
+            subtotal:        subtotal,
+            discount_amount: discAmt,
+            total:           netTotal,
+            payment_method:  order.payment_method || 'cash',
+            cash_received:   0,
+            change:          0,
+            kitchen_notes:   order.kitchen_notes  || ''
+        };
+    }
+
+    // ── Trigger a PDF blob download in the browser ─────────────────
+    function triggerPdfDownload(blob, filename){
+        var url = window.URL.createObjectURL(blob);
+        var a   = document.createElement('a');
+        a.href  = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    // ── Active order: Save PDF → mark complete ─────────────────────
+    function savePdfAndComplete(orderId, btn){
+        btn.disabled    = true;
+        btn.textContent = '⏳ Generating...';
+
+        // Use the order data already embedded in the card (no extra fetch needed)
+        var order = getOrderFromCard(orderId);
+
+        if(!order){
+            // Fallback: fetch fresh from server if card data is unavailable
+            fetch('/saved_orders', {cache:'no-store'})
+                .then(function(r){return r.json();})
+                .then(function(data){
+                    if(!data.success) throw new Error(data.error || 'Failed to load orders');
+                    var found = (data.orders || []).find(function(o){
+                        // Compare as numbers to avoid type-mismatch with ===
+                        return Number(o.id) === Number(orderId);
+                    });
+                    if(!found) throw new Error('Order not found');
+                    return found;
+                })
+                .then(function(o){ return _downloadAndComplete(o, orderId, btn); })
+                .catch(function(err){
+                    alert('Error: ' + (err.message || 'Unknown error'));
+                    btn.disabled    = false;
+                    btn.textContent = '📄 Save PDF';
+                });
+            return;
+        }
+
+        _downloadAndComplete(order, orderId, btn);
+    }
+
+    function _downloadAndComplete(order, orderId, btn){
+        var payload = buildReceiptPayload(order);
+
+        fetch('/download_receipt', {
+            method:  'POST',
+            headers: {'Content-Type':'application/json'},
+            body:    JSON.stringify(payload)
+        })
+        .then(function(r){
+            if(!r.ok){
+                // Surface the server error message when available
+                return r.json().then(function(e){
+                    throw new Error(e.error || 'PDF generation failed (HTTP '+r.status+')');
+                }).catch(function(){
+                    throw new Error('PDF generation failed (HTTP '+r.status+')');
+                });
+            }
+            return r.blob();
+        })
+        .then(function(blob){
+            triggerPdfDownload(blob, 'order_' + orderId + '.pdf');
+            // Mark the order as completed only after the PDF has been triggered
+            return fetch('/saved_orders/complete', {
+                method:  'POST',
+                headers: {'Content-Type':'application/json'},
+                body:    JSON.stringify({id: orderId})
+            });
+        })
+        .then(function(r){return r.json();})
+        .then(function(d){
+            if(!d.success) throw new Error(d.error || 'Failed to mark order as complete');
+            loadOrders();   // refresh the list
+        })
+        .catch(function(err){
+            alert('Error: ' + (err.message || 'Unknown error'));
+            btn.disabled    = false;
+            btn.textContent = '📄 Save PDF';
+        });
+    }
+
+    // ── Completed order: Save PDF only ─────────────────────────────
+    function savePdfCompleted(orderId, btn){
+        btn.disabled    = true;
+        btn.textContent = '⏳ Generating...';
+
+        var order = getOrderFromCard(orderId);
+
+        if(!order){
+            alert('Error: Could not read order data. Please refresh the page.');
+            btn.disabled    = false;
+            btn.textContent = '📄 Save PDF';
+            return;
+        }
+
+        var payload = buildReceiptPayload(order);
+
+        fetch('/download_receipt', {
+            method:  'POST',
+            headers: {'Content-Type':'application/json'},
+            body:    JSON.stringify(payload)
+        })
+        .then(function(r){
+            if(!r.ok){
+                return r.json().then(function(e){
+                    throw new Error(e.error || 'PDF generation failed (HTTP '+r.status+')');
+                }).catch(function(){
+                    throw new Error('PDF generation failed (HTTP '+r.status+')');
+                });
+            }
+            return r.blob();
+        })
+        .then(function(blob){
+            triggerPdfDownload(blob, 'order_' + orderId + '.pdf');
+        })
+        .catch(function(err){
+            alert('Error: ' + (err.message || 'Unknown error'));
+        })
+        .finally(function(){
+            btn.disabled    = false;
+            btn.textContent = '📄 Save PDF';
+        });
+    }
+
+    function toggleOrder(id){var card=document.getElementById('order-card-'+id);if(card)card.classList.toggle('open');}
+    function editOrder(id){window.location.href='/pos?order_id='+id;}
     function openVoidModal(id,label){voidOrderId=id;voidPinBuffer='';voidAuthorizedPin='';document.getElementById('voidOrderName').textContent=label;document.getElementById('voidFormOrderName').textContent=label;document.getElementById('voidReason').value='';document.getElementById('voidResolution').value='';document.getElementById('pinError').textContent='';document.getElementById('formError').textContent='';updatePinDots();document.getElementById('phasePin').classList.add('active');document.getElementById('phaseForm').classList.remove('active');document.getElementById('voidModal').classList.add('visible');}
     function closeVoidModal(){document.getElementById('voidModal').classList.remove('visible');voidOrderId=null;voidPinBuffer='';}
     function updatePinDots(){for(var i=0;i<4;i++){var dot=document.getElementById('dot'+i);if(dot)dot.classList.toggle('filled',i<voidPinBuffer.length);}}
@@ -264,8 +544,8 @@
     function openClearConfirm(){document.getElementById('clearModal').classList.add('visible');}
     function closeClearModal(){document.getElementById('clearModal').classList.remove('visible');}
     function confirmClear(){fetch('/saved_orders/clear',{method:'POST',headers:{'Content-Type':'application/json'}}).then(function(r){return r.json();}).then(function(data){closeClearModal();if(data.success){alert(data.message);if(data.download_url){var a=document.createElement('a');a.href=data.download_url;a.download='';a.click();}loadOrders();}else{alert('Error: '+data.error);}});}
-    document.addEventListener('DOMContentLoaded',loadOrders);
-    setInterval(loadOrders,30000);
+    document.addEventListener('DOMContentLoaded', loadOrders);
+    setInterval(loadOrders, 30000);
 </script>
 </body>
 </html>

@@ -2,7 +2,7 @@ import csv
 import io
 import json
 import os
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, send_file
 from flask_login import login_required, current_user
 from database import db, Sale, SaleItem, Product, SavedOrder, User
 from app.services.order_service import calculate_total, normalize_cart, serialize_order, calculate_cart_with_item_discounts
@@ -11,7 +11,191 @@ from app.services.audit_service import log_action
 from app.services.inventory_service import deduct_for_sale
 from datetime import datetime
 
+# ── ReportLab imports for PDF receipt generation ──────────────────
+from reportlab.lib.pagesizes import A7
+from reportlab.lib.units import mm
+from reportlab.pdfgen import canvas as rl_canvas
+
 orders_bp = Blueprint("orders", __name__)
+
+
+# ── Download Receipt as PDF ────────────────────────────────────────
+@orders_bp.route("/download_receipt", methods=["POST"])
+@login_required
+def download_receipt():
+    """
+    Accepts a JSON payload describing a completed sale or saved order
+    and returns a thermal-style PDF receipt as a file download.
+
+    Expected payload fields:
+        sale_id, cashier, timestamp, items, subtotal,
+        discount_amount, total, payment_method,
+        cash_received, change, kitchen_notes (optional)
+    """
+    try:
+        data = request.get_json(force=True) or {}
+
+        sale_id         = data.get("sale_id", "—")
+        cashier         = data.get("cashier", "—")
+        timestamp       = data.get("timestamp", "")
+        items           = data.get("items", [])
+        subtotal        = float(data.get("subtotal", 0))
+        discount_amount = float(data.get("discount_amount", 0))
+        total           = float(data.get("total", 0))
+        payment_method  = str(data.get("payment_method", "cash")).upper()
+        cash_received   = float(data.get("cash_received", 0))
+        change          = float(data.get("change", 0))
+        kitchen_notes   = data.get("kitchen_notes", "")
+
+        # ── Build PDF in memory ──────────────────────────────────
+        buf = io.BytesIO()
+
+        # Thermal receipt width: 80 mm wide, dynamic height
+        page_w = 80 * mm
+
+        # Estimate page height: header ~40mm + per-item ~7mm + footer ~40mm
+        page_h = (40 + len(items) * 7 + 50) * mm
+        page_h = max(page_h, 120 * mm)
+
+        c = rl_canvas.Canvas(buf, pagesize=(page_w, page_h))
+        c.setTitle(f"Receipt {sale_id}")
+
+        y = page_h - 6 * mm  # cursor starts near top
+
+        def line_sep(dotted=False):
+            """Draw a separator line and advance cursor."""
+            nonlocal y
+            y -= 2 * mm
+            if dotted:
+                c.setDash(2, 2)
+            c.line(4 * mm, y, page_w - 4 * mm, y)
+            c.setDash()  # reset dash
+            y -= 3 * mm
+
+        def text_row(left, right=None, font="Helvetica", size=7, bold=False):
+            """Print a single row; optionally right-aligned value."""
+            nonlocal y
+            fname = "Helvetica-Bold" if bold else font
+            c.setFont(fname, size)
+            c.drawString(4 * mm, y, str(left))
+            if right is not None:
+                c.drawRightString(page_w - 4 * mm, y, str(right))
+            y -= 4.5 * mm
+
+        # ── Header ───────────────────────────────────────────────
+        # Logo image (optional – silently skip if missing)
+        logo_path = os.path.join(current_app.root_path, "static", "logo.png")
+        if os.path.exists(logo_path):
+            logo_w, logo_h = 24 * mm, 10 * mm
+            c.drawImage(
+                logo_path,
+                (page_w - logo_w) / 2, y - logo_h,
+                width=logo_w, height=logo_h,
+                preserveAspectRatio=True, mask="auto",
+            )
+            y -= logo_h + 2 * mm
+
+        c.setFont("Helvetica-Bold", 9)
+        c.drawCentredString(page_w / 2, y, "SUPREMACY INTL")
+        y -= 5 * mm
+        c.setFont("Helvetica", 6.5)
+        c.drawCentredString(page_w / 2, y, "Sales Invoice")
+        y -= 4 * mm
+        c.drawCentredString(page_w / 2, y, timestamp)
+        y -= 4 * mm
+        c.drawCentredString(page_w / 2, y, f"Order: {sale_id}")
+        y -= 4 * mm
+        c.drawCentredString(page_w / 2, y, f"Cashier: {cashier}")
+        y -= 3 * mm
+
+        line_sep(dotted=True)
+
+        # ── Items ─────────────────────────────────────────────────
+        c.setFont("Helvetica-Bold", 7)
+        c.drawString(4 * mm, y, "ITEM")
+        c.drawRightString(page_w - 4 * mm, y, "AMOUNT")
+        y -= 5 * mm
+
+        for item in items:
+            name     = str(item.get("name", "Item"))
+            qty      = int(item.get("qty", 1))
+            price    = float(item.get("price", 0))
+            discount = float(item.get("discount", 0))
+            notes    = str(item.get("notes", "")).strip()
+
+            line_total = price * qty - discount
+
+            # Item name + qty
+            c.setFont("Helvetica-Bold", 7)
+            c.drawString(4 * mm, y, f"{name}")
+            y -= 4 * mm
+
+            # qty × price line
+            c.setFont("Helvetica", 6.5)
+            qty_line = f"  {qty} x P{price:.2f}"
+            if discount > 0:
+                qty_line += f"  (disc: -P{discount:.2f})"
+            c.drawString(4 * mm, y, qty_line)
+            c.drawRightString(page_w - 4 * mm, y, f"P{line_total:.2f}")
+            y -= 4.5 * mm
+
+            if notes:
+                c.setFont("Helvetica-Oblique", 6)
+                c.drawString(6 * mm, y, f"  Note: {notes}")
+                y -= 4 * mm
+
+        line_sep(dotted=True)
+
+        # ── Totals ────────────────────────────────────────────────
+        text_row(f"Subtotal", f"P{subtotal:.2f}", size=7)
+        if discount_amount > 0:
+            text_row(f"Discount", f"-P{discount_amount:.2f}", size=7)
+
+        y -= 1 * mm
+        line_sep()
+
+        # Grand total – bigger font
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(4 * mm, y, "TOTAL")
+        c.drawRightString(page_w - 4 * mm, y, f"P{total:.2f}")
+        y -= 6 * mm
+
+        line_sep(dotted=True)
+
+        # ── Payment ───────────────────────────────────────────────
+        text_row("Payment", payment_method, size=7)
+        if payment_method == "CASH":
+            text_row("Cash Received", f"P{cash_received:.2f}", size=7)
+            text_row("Change", f"P{change:.2f}", size=7, bold=True)
+
+        if kitchen_notes:
+            y -= 2 * mm
+            line_sep(dotted=True)
+            c.setFont("Helvetica-Oblique", 6.5)
+            c.drawString(4 * mm, y, f"Notes: {kitchen_notes}")
+            y -= 4 * mm
+
+        line_sep(dotted=True)
+
+        # ── Footer ────────────────────────────────────────────────
+        c.setFont("Helvetica", 6.5)
+        c.drawCentredString(page_w / 2, y, "Thank you for your purchase!")
+        y -= 4 * mm
+        c.drawCentredString(page_w / 2, y, "Please come again.")
+
+        c.save()
+        buf.seek(0)
+
+        filename = f"receipt_{sale_id}.pdf"
+        return send_file(
+            buf,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename,
+        )
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # ── Checkout ──────────────────────────────────────────────────────────
@@ -58,7 +242,7 @@ def checkout():
         db.session.commit()
 
         deduct_for_sale(cart, current_user.id)
-        log_action(current_user.id, "CHECKOUT", f"Sale #{sale.id} total ₱{total}")
+        log_action(current_user.id, "CHECKOUT", f"Sale #{sale.id} total P{total}")
 
         now = datetime.now()
         return jsonify({

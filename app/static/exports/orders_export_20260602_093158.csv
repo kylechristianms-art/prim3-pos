@@ -1,0 +1,6 @@
+ID,Label,Subtotal,Discount,Total,Payment,Type,Status,Created At,Void Reason,Void Resolution
+1,Sale #100,89.00,0.00,89.00,KC - Order,dine_in,COMPLETED,2026-06-01 11:45,,
+2,Sale #101,357.00,0.00,357.00,FoodPanda,dine_in,COMPLETED,2026-06-01 11:46,,
+3,Sale #103,118.00,0.00,118.00,KC - ORDER,dine_in,COMPLETED,2026-06-01 12:15,,
+4,Sale #104,108.00,0.00,108.00,cash,dine_in,COMPLETED,2026-06-01 12:15,,
+5,Sale #105,294.00,0.00,294.00,cash,dine_in,COMPLETED,2026-06-01 12:16,,
