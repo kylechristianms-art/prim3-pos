@@ -30,8 +30,8 @@
         *{box-sizing:border-box;margin:0;padding:0;}
         body{background:var(--bg);font-family:Arial,sans-serif;color:var(--text);min-height:100vh;display:flex;overflow-x:hidden;
             transition:background .25s,color .25s;}
-        
-        /* Sidebar */
+
+        /* ── Sidebar ── */
         :root { --sidebar-w: 240px; --sidebar-collapsed-w: 64px; }
         .sidebar { width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;position:fixed;height:100vh;z-index:50;transition:width .25s ease,background .25s,border-color .25s; }
         .sidebar.collapsed { width:var(--sidebar-collapsed-w); }
@@ -82,88 +82,222 @@
         .sidebar.collapsed .logout-icon { display:none; }
         .sidebar.collapsed .logout-icon-collapsed { display:inline-flex; }
 
-        /* Main */
+        /* ── Main ── */
         .main { margin-left:var(--sidebar-w);flex:1;padding:18px;min-width:0;transition:margin-left .25s ease; }
         .sidebar-collapsed-state .main { margin-left:var(--sidebar-collapsed-w); }
-        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
-        .page-title{font-size:24px;font-weight:700;}
-        .page-subtitle{font-size:13px;color:var(--text-muted);margin-top:4px;}
-        .btn-clear-all{padding:10px 20px;background:var(--surface2);color:var(--red);border:1px solid var(--red);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
-        .btn-clear-all:hover{background:var(--red);color:#fff;}
-        .orders-layout{display:flex;flex-direction:column;gap:20px;}
-        .orders-section-title{font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:10px;}
-        .column-count{background:var(--surface2);color:var(--accent);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;}
-        .order-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .2s,background .25s;}
-        .order-card:hover{border-color:var(--border2);}
-        .order-card.voided{opacity:.55;}
-        .order-card.voided .order-header{background:var(--surface3);}
-        .order-card.completed{border-color:var(--border-done);}
-        .order-card.completed .order-header{background:var(--surface-done);}
-        .order-header{padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s;}
-        .order-header:hover{background:var(--surface2);}
-        .order-expand-icon{color:var(--text-dim);font-size:12px;transition:transform .2s;flex-shrink:0;}
-        .order-card.open .order-expand-icon{transform:rotate(90deg);}
-        .order-label{font-size:14px;font-weight:700;flex:1;}
-        .order-meta{font-size:11px;color:var(--text-muted);}
-        .order-total{font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap;}
-        .void-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface-void);color:var(--red);margin-left:6px;}
-        .completed-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface-done);color:var(--green);margin-left:6px;}
-        .type-badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;}
-        .type-dine{background:#0d1f17;color:#4ecca3;}
-        .type-take{background:#001a3d;color:#64b5f6;}
-        [data-theme="light"] .type-dine{background:#d4f5ec;color:#1a9c72;}
-        [data-theme="light"] .type-take{background:#d4e8fa;color:#1565c0;}
-        .order-body{display:none;padding:0 16px 14px;border-top:1px solid var(--border);}
-        .order-card.open .order-body{display:block;}
-        .mini-receipt{background:#fff;color:#000;border-radius:8px;padding:16px 14px;font-family:'Courier New',monospace;font-size:11px;margin:12px 0;}
-        .mini-receipt-header{text-align:center;margin-bottom:10px;}
-        .mini-receipt-logo{font-size:13px;font-weight:900;letter-spacing:2px;}
-        .mini-receipt-logo-img{max-width:100px;max-height:36px;object-fit:contain;}
-        .mini-receipt-sub{font-size:10px;color:#888;}
-        .mini-receipt-divider{border:none;border-top:1px dashed #ccc;margin:6px 0;}
-        .mini-receipt-item{display:flex;justify-content:space-between;font-weight:700;margin-bottom:2px;}
-        .mini-receipt-row{display:flex;justify-content:space-between;color:#555;margin-top:2px;}
-        .mini-receipt-total{display:flex;justify-content:space-between;font-weight:900;font-size:13px;margin-top:4px;}
-        .order-actions{display:flex;gap:8px;margin-top:4px;}
-        .btn-edit-order{flex:1;padding:9px;background:var(--green);color:#000;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;transition:filter .15s;}
-        .btn-edit-order:hover{filter:brightness(.85);}
-        .btn-void-order{flex:1;padding:9px;background:var(--surface2);color:var(--red);border:1px solid var(--red);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
-        .btn-void-order:hover{background:var(--red);color:#fff;}
-        .btn-save-pdf{flex:1;padding:9px;background:var(--surface2);color:var(--blue);border:1px solid var(--blue);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
-        .btn-save-pdf:hover{background:var(--blue);color:#fff;}
-        /* ── [NEW] Delete button — testing only ── */
-        .btn-delete-order{flex:1;padding:9px;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border2);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
-        .btn-delete-order:hover{background:var(--red);color:#fff;border-color:var(--red);}
-        .void-info{background:var(--surface-void);border:1px solid var(--border-void);border-radius:6px;padding:8px 12px;margin-top:8px;font-size:11px;}
-        .void-info-label{color:var(--red);font-weight:700;margin-bottom:4px;}
-        .void-info-row{color:var(--text-muted);margin-top:2px;}
-        .empty-col{padding:28px 0;text-align:center;color:var(--text-dim);font-size:13px;}
-        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100;align-items:center;justify-content:center;padding:20px;}
-        .modal-overlay.visible{display:flex;}
-        .modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;width:100%;max-width:400px;transition:background .25s;}
-        .modal-title{font-size:17px;font-weight:700;margin-bottom:20px;}
-        .phase{display:none;} .phase.active{display:block;}
-        .pin-dots{display:flex;gap:12px;justify-content:center;margin:20px 0;}
-        .pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);background:transparent;transition:all .15s;}
-        .pin-dot.filled{background:var(--accent);border-color:var(--accent);}
-        .pin-numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-        .pin-key{padding:14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;font-size:18px;font-weight:700;cursor:pointer;text-align:center;color:var(--text);transition:all .15s;}
-        .pin-key:hover{background:var(--row-hover);border-color:var(--text-dim);}
-        .pin-key:active{background:var(--accent);color:#000;transform:scale(.95);}
-        .pin-key.del{color:var(--text-muted);font-size:13px;}
-        .error-msg{color:var(--red);font-size:12px;margin-top:8px;min-height:18px;}
-        .form-group{margin-bottom:14px;}
-        .form-group label{display:block;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
-        .form-textarea{width:100%;padding:10px 12px;background:var(--input-bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-size:13px;outline:none;resize:vertical;min-height:60px;transition:border-color .2s;}
-        .form-textarea:focus{border-color:var(--accent);}
-        .modal-actions{display:flex;gap:10px;margin-top:18px;}
-        .btn-save{flex:1;padding:11px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:filter .2s;}
-        .btn-save:hover{filter:brightness(.85);}
-        .btn-cancel{flex:1;padding:11px;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border2);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:color .2s,border-color .2s;}
-        .btn-cancel:hover{color:var(--text);border-color:var(--text-dim);}
-        .clear-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;max-width:380px;width:100%;}
-        .clear-modal-title{font-size:17px;font-weight:700;margin-bottom:12px;}
-        .clear-modal-text{font-size:13px;color:var(--text-muted);margin-bottom:20px;}
+        .page-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:18px; }
+        .page-title { font-size:24px;font-weight:700; }
+        .page-subtitle { font-size:13px;color:var(--text-muted);margin-top:4px; }
+        .btn-clear-all { padding:10px 20px;background:var(--surface2);color:var(--red);border:1px solid var(--red);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s; }
+        .btn-clear-all:hover { background:var(--red);color:#fff; }
+
+        /* ── Section layout ── */
+        .orders-layout { display:flex;flex-direction:column;gap:24px; }
+        .orders-section-title { font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:10px; }
+        .column-count { background:var(--surface2);color:var(--accent);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px; }
+        .empty-col { padding:32px 0;text-align:center;color:var(--text-dim);font-size:13px; }
+
+        /* ── Two independent flex columns — no cross-column height locking ── */
+        .orders-grid {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+        .orders-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-width: 0;
+        }
+        @media (max-width: 1100px) {
+            .orders-grid { flex-direction: column; }
+            .orders-col  { width: 100%; }
+        }
+
+        /* ── Order card (flat, always-expanded) ── */
+        .order-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: border-color .2s, background .25s, box-shadow .2s;
+        }
+        .order-card:hover { border-color: var(--border2); box-shadow: 0 3px 14px rgba(0,0,0,.22); }
+        .order-card.voided { opacity: .58; }
+        .order-card.completed { border-color: var(--border-done); }
+
+        /* ── Card header ── */
+        .card-header {
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            background: var(--surface2);
+            transition: background .25s, filter .15s;
+            cursor: pointer;
+            user-select: none;
+        }
+        .card-header:hover { filter: brightness(1.12); }
+        .order-card.completed .card-header { background: var(--surface-done); border-bottom-color: var(--border-done); }
+        .order-card.voided   .card-header { background: var(--surface3); }
+
+        .card-header-left  { flex: 1; min-width: 0; }
+        .card-label { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-meta  { font-size: 10px; color: var(--text-muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .card-header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+        .card-total { font-size: 13px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+
+        /* ── Badges ── */
+        .void-badge      { display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface-void);color:var(--red);margin-left:5px; }
+        .completed-badge { display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface-done);color:var(--green);margin-left:5px; }
+        .type-badge      { display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700; }
+        .type-dine  { background:#0d1f17;color:#4ecca3; }
+        .type-take  { background:#001a3d;color:#64b5f6; }
+        [data-theme="light"] .type-dine { background:#d4f5ec;color:#1a9c72; }
+        [data-theme="light"] .type-take { background:#d4e8fa;color:#1565c0; }
+
+        /* ── Card body: 80% preview | 20% actions ── */
+        .card-body {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            max-height: 1200px;
+            opacity: 1;
+            transition: max-height .35s ease, opacity .28s ease;
+        }
+        .card-body.card-collapsed { max-height: 0; opacity: 0; pointer-events: none; }
+
+        /* Chevron inside card header */
+        .card-chevron { font-size:11px;color:var(--text-muted);transition:transform .25s ease;flex-shrink:0;margin-left:4px; }
+        .card-chevron.rotated { transform:rotate(-90deg); }
+
+        /* Receipt preview — 80% */
+        .card-preview {
+            flex: 0 0 80%;
+            width: 80%;
+            padding: 12px;
+            border-right: 1px solid var(--border);
+            min-width: 0;
+            overflow-y: auto;
+        }
+
+        /* Action buttons column — 20% */
+        .card-actions {
+            flex: 0 0 20%;
+            width: 20%;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            padding: 12px 8px;
+            justify-content: flex-start;
+            min-width: 0;
+        }
+
+        /* ── Mini receipt (inside card-preview) ── */
+        .mini-receipt {
+            background: #fff;
+            color: #000;
+            border-radius: 7px;
+            padding: 12px 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+        }
+        .mini-receipt-header { text-align: center; margin-bottom: 8px; }
+        .mini-receipt-logo { font-size: 12px; font-weight: 900; letter-spacing: 2px; }
+        .mini-receipt-logo-img { max-width: 80px; max-height: 28px; object-fit: contain; display: block; margin: 0 auto 3px; }
+        .mini-receipt-sub { font-size: 9px; color: #888; }
+        .mini-receipt-divider { border: none; border-top: 1px dashed #ccc; margin: 5px 0; }
+        .mini-receipt-item { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 2px; gap: 6px; }
+        .mini-receipt-item span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .mini-receipt-item span:last-child  { flex-shrink: 0; }
+        .mini-receipt-row  { display: flex; justify-content: space-between; color: #555; margin-top: 2px; gap: 4px; }
+        .mini-receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 11px; margin-top: 4px; }
+
+        /* ── Void info block (inside card-preview) ── */
+        .void-info { background: var(--surface-void); border: 1px solid var(--border-void); border-radius: 6px; padding: 8px 10px; margin-top: 8px; font-size: 10px; }
+        .void-info-label { color: var(--red); font-weight: 700; margin-bottom: 4px; }
+        .void-info-row { color: var(--text-muted); margin-top: 2px; }
+
+        /* ── Action buttons ── */
+        .btn-edit-order {
+            width: 100%; padding: 9px 4px;
+            background: var(--green); color: #000;
+            border: none; border-radius: 7px;
+            font-size: 11px; font-weight: 700;
+            cursor: pointer; transition: filter .15s;
+            text-align: center; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .btn-edit-order:hover { filter: brightness(.85); }
+
+        .btn-void-order {
+            width: 100%; padding: 9px 4px;
+            background: var(--surface2); color: var(--red);
+            border: 1px solid var(--red); border-radius: 7px;
+            font-size: 11px; font-weight: 700;
+            cursor: pointer; transition: all .2s;
+            text-align: center; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .btn-void-order:hover { background: var(--red); color: #fff; }
+
+        .btn-save-pdf {
+            width: 100%; padding: 9px 4px;
+            background: var(--surface2); color: var(--blue);
+            border: 1px solid var(--blue); border-radius: 7px;
+            font-size: 11px; font-weight: 700;
+            cursor: pointer; transition: all .2s;
+            text-align: center; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .btn-save-pdf:hover { background: var(--blue); color: #fff; }
+
+        .btn-delete-order {
+            width: 100%; padding: 9px 4px;
+            background: var(--surface2); color: var(--text-muted);
+            border: 1px solid var(--border2); border-radius: 7px;
+            font-size: 11px; font-weight: 700;
+            cursor: pointer; transition: all .2s;
+            text-align: center; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .btn-delete-order:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+        /* ── Modals ── */
+        .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100;align-items:center;justify-content:center;padding:20px; }
+        .modal-overlay.visible { display:flex; }
+        .modal { background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;width:100%;max-width:400px;transition:background .25s; }
+        .modal-title { font-size:17px;font-weight:700;margin-bottom:20px; }
+        .phase { display:none; } .phase.active { display:block; }
+        .pin-dots { display:flex;gap:12px;justify-content:center;margin:20px 0; }
+        .pin-dot { width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);background:transparent;transition:all .15s; }
+        .pin-dot.filled { background:var(--accent);border-color:var(--accent); }
+        .pin-numpad { display:grid;grid-template-columns:repeat(3,1fr);gap:10px; }
+        .pin-key { padding:14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;font-size:18px;font-weight:700;cursor:pointer;text-align:center;color:var(--text);transition:all .15s; }
+        .pin-key:hover { background:var(--row-hover);border-color:var(--text-dim); }
+        .pin-key:active { background:var(--accent);color:#000;transform:scale(.95); }
+        .pin-key.del { color:var(--text-muted);font-size:13px; }
+        .error-msg { color:var(--red);font-size:12px;margin-top:8px;min-height:18px; }
+        .form-group { margin-bottom:14px; }
+        .form-group label { display:block;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px; }
+        .form-textarea { width:100%;padding:10px 12px;background:var(--input-bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-size:13px;outline:none;resize:vertical;min-height:60px;transition:border-color .2s; }
+        .form-textarea:focus { border-color:var(--accent); }
+        .modal-actions { display:flex;gap:10px;margin-top:18px; }
+        .btn-save { flex:1;padding:11px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:filter .2s; }
+        .btn-save:hover { filter:brightness(.85); }
+        .btn-cancel { flex:1;padding:11px;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border2);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:color .2s,border-color .2s; }
+        .btn-cancel:hover { color:var(--text);border-color:var(--text-dim); }
+        .clear-modal { background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;max-width:380px;width:100%; }
+        .clear-modal-title { font-size:17px;font-weight:700;margin-bottom:12px; }
+        .clear-modal-text { font-size:13px;color:var(--text-muted);margin-bottom:20px; }
     </style>
 <base target="_blank">
 </head>
@@ -181,13 +315,13 @@
     </div>
     <nav class="sidebar-nav">
         <a href="/dashboard" class="nav-item" data-label="Dashboard" target="_self"><span class="nav-icon">📊</span><span class="nav-label"> Dashboard</span></a>
-        <a href="/pos" class="nav-item" data-label="POS" target="_self"><span class="nav-icon">🛒</span><span class="nav-label"> POS</span></a>
-        <a href="/orders" class="nav-item active" data-label="Orders" target="_self"><span class="nav-icon">📋</span><span class="nav-label"> Orders</span></a>
+        <a href="/pos"       class="nav-item" data-label="POS"       target="_self"><span class="nav-icon">🛒</span><span class="nav-label"> POS</span></a>
+        <a href="/orders"    class="nav-item active" data-label="Orders" target="_self"><span class="nav-icon">📋</span><span class="nav-label"> Orders</span></a>
         {% if current_user.role in ['admin', 'manager'] %}
-        <a href="/products" class="nav-item" data-label="Products" target="_self"><span class="nav-icon">📦</span><span class="nav-label"> Products</span></a>
+        <a href="/products"  class="nav-item" data-label="Products"  target="_self"><span class="nav-icon">📦</span><span class="nav-label"> Products</span></a>
         <a href="/inventory" class="nav-item" data-label="Inventory" target="_self"><span class="nav-icon">🧪</span><span class="nav-label"> Inventory</span></a>
-        <a href="/reports" class="nav-item" data-label="Reports" target="_self"><span class="nav-icon">📈</span><span class="nav-label"> Reports</span></a>
-        <a href="/users" class="nav-item" data-label="Users" target="_self"><span class="nav-icon">👥</span><span class="nav-label"> Users</span></a>
+        <a href="/reports"   class="nav-item" data-label="Reports"   target="_self"><span class="nav-icon">📈</span><span class="nav-label"> Reports</span></a>
+        <a href="/users"     class="nav-item" data-label="Users"     target="_self"><span class="nav-icon">👥</span><span class="nav-label"> Users</span></a>
         {% endif %}
     </nav>
     <div class="sidebar-footer">
@@ -290,21 +424,30 @@
 </div>
 
 <script>
-    var THEME_KEY='prim3pos_theme';
-    function applyTheme(isDark){document.documentElement.setAttribute('data-theme',isDark?'dark':'light');document.getElementById('themeLabel').textContent=isDark?'🌙 Dark':'☀️ Light';document.getElementById('themeIcon').textContent=isDark?'🌙':'☀️';document.getElementById('themeToggle').checked=!isDark;localStorage.setItem(THEME_KEY,isDark?'dark':'light');}
-    function toggleTheme(chk){applyTheme(!chk.checked);}
-    applyTheme(localStorage.getItem(THEME_KEY)!=='light');
+    /* ── Theme ── */
+    var THEME_KEY = 'prim3pos_theme';
+    function applyTheme(isDark) {
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        document.getElementById('themeLabel').textContent = isDark ? '🌙 Dark' : '☀️ Light';
+        document.getElementById('themeIcon').textContent  = isDark ? '🌙' : '☀️';
+        document.getElementById('themeToggle').checked   = !isDark;
+        localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+    }
+    function toggleTheme(chk) { applyTheme(!chk.checked); }
+    applyTheme(localStorage.getItem(THEME_KEY) !== 'light');
 
-    var voidOrderId=null,voidPinBuffer='',voidAuthorizedPin='';
+    /* ── State ── */
+    var voidOrderId = null, voidPinBuffer = '', voidAuthorizedPin = '';
 
-    function loadOrders(){
-        fetch('/saved_orders',{cache:'no-store'})
-            .then(function(r){return r.json();})
-            .then(function(data){
-                if(!data.success){return;}
-                var active    = data.orders.filter(function(o){return !o.is_void && !o.is_completed;});
-                var completed = data.orders.filter(function(o){return !o.is_void &&  o.is_completed;});
-                var voided    = data.orders.filter(function(o){return  o.is_void;});
+    /* ── Load orders from server ── */
+    function loadOrders() {
+        fetch('/saved_orders', { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success) { return; }
+                var active    = data.orders.filter(function(o) { return !o.is_void && !o.is_completed; });
+                var completed = data.orders.filter(function(o) { return !o.is_void &&  o.is_completed; });
+                var voided    = data.orders.filter(function(o) { return  o.is_void; });
                 document.getElementById('activeCount').textContent    = active.length;
                 document.getElementById('completedCount').textContent = completed.length;
                 document.getElementById('voidedCount').textContent    = voided.length;
@@ -312,108 +455,155 @@
                 renderSection('completedOrders', completed, 'completed');
                 renderSection('voidedOrders',    voided,    'voided');
             })
-            .catch(function(err){console.error(err);});
+            .catch(function(err) { console.error(err); });
     }
 
-    function renderSection(elId, orders, type){
+    /* ── Render a section into two independent columns ── */
+    function renderSection(elId, orders, type) {
         var el = document.getElementById(elId);
-        if(!orders.length){
-            var labels = {active:'No active orders.',completed:'No completed transactions yet.',voided:'No voided orders.'};
-            el.innerHTML = '<div class="empty-col">'+labels[type]+'</div>';
+        if (!orders.length) {
+            var labels = {
+                active:    'No active orders.',
+                completed: 'No completed transactions yet.',
+                voided:    'No voided orders.'
+            };
+            el.innerHTML = '<div class="empty-col">' + labels[type] + '</div>';
             return;
         }
-        el.innerHTML = orders.map(function(o){return buildCard(o,type);}).join('');
+        var left  = orders.filter(function(_, i) { return i % 2 === 0; });
+        var right = orders.filter(function(_, i) { return i % 2 !== 0; });
+        el.innerHTML = '<div class="orders-grid">'
+            + '<div class="orders-col">' + left.map(function(o) { return buildCard(o, type); }).join('') + '</div>'
+            + '<div class="orders-col">' + right.map(function(o) { return buildCard(o, type); }).join('') + '</div>'
+            + '</div>';
     }
 
-    function buildCard(o, type){
-        var total      = parseFloat(o.total) || 0;
-        var typeBadge  = o.order_type==='dine_in'
+    /* ── Build a single order card ── */
+    function buildCard(o, type) {
+        var total = parseFloat(o.total) || 0;
+
+        var typeBadge = o.order_type === 'dine_in'
             ? '<span class="type-badge type-dine">Dine In</span>'
             : '<span class="type-badge type-take">Take Out</span>';
-        var statusBadge = '';
-        if(type==='voided')    statusBadge = '<span class="void-badge">VOIDED</span>';
-        if(type==='completed') statusBadge = '<span class="completed-badge">✅ DONE</span>';
 
-        var receiptItems = o.cart.map(function(item){
-            var lineTotal = (parseFloat(item.price)||0)*(parseInt(item.qty)||0) - (parseFloat(item.discount)||0);
-            return '<div class="mini-receipt-item"><span>'+escHtml(item.name)+' x'+item.qty+'</span><span>₱'+lineTotal.toFixed(2)+'</span></div>';
+        var statusBadge = '';
+        if (type === 'voided')    statusBadge = '<span class="void-badge">VOIDED</span>';
+        if (type === 'completed') statusBadge = '<span class="completed-badge">✅ DONE</span>';
+
+        /* Receipt line items */
+        var receiptItems = o.cart.map(function(item) {
+            var lineTotal = (parseFloat(item.price) || 0) * (parseInt(item.qty) || 0)
+                          - (parseFloat(item.discount) || 0);
+            return '<div class="mini-receipt-item">'
+                + '<span>' + escHtml(item.name) + ' x' + item.qty + '</span>'
+                + '<span>₱' + lineTotal.toFixed(2) + '</span>'
+                + '</div>';
         }).join('');
 
+        /* Discount row (only when > 0) */
         var discountRow = '';
-        if(parseFloat(o.discount_amount) > 0){
-            discountRow = '<div class="mini-receipt-row"><span>Discount</span><span>-₱'+parseFloat(o.discount_amount).toFixed(2)+'</span></div>';
+        if (parseFloat(o.discount_amount) > 0) {
+            discountRow = '<div class="mini-receipt-row">'
+                + '<span>Discount</span>'
+                + '<span>-₱' + parseFloat(o.discount_amount).toFixed(2) + '</span>'
+                + '</div>';
         }
 
+        /* Void reason block */
         var voidInfoHtml = '';
-        if(type==='voided' && o.void_reason){
-            voidInfoHtml = '<div class="void-info"><div class="void-info-label">🚫 VOIDED</div>'
-                + '<div class="void-info-row"><strong>Reason:</strong> '+escHtml(o.void_reason)+'</div>'
-                + (o.void_resolution ? '<div class="void-info-row"><strong>Resolution:</strong> '+escHtml(o.void_resolution)+'</div>' : '')
+        if (type === 'voided' && o.void_reason) {
+            voidInfoHtml = '<div class="void-info">'
+                + '<div class="void-info-label">🚫 VOIDED</div>'
+                + '<div class="void-info-row"><strong>Reason:</strong> ' + escHtml(o.void_reason) + '</div>'
+                + (o.void_resolution
+                    ? '<div class="void-info-row"><strong>Resolution:</strong> ' + escHtml(o.void_resolution) + '</div>'
+                    : '')
                 + '</div>';
         }
 
+        /* Action buttons — stacked vertically in the 20% column */
         var actionsHtml = '';
-        if(type==='active'){
-            actionsHtml = '<div class="order-actions">'
-                + '<button class="btn-edit-order" onclick="editOrder('+o.id+')">✏️ Edit</button>'
-                + '<button class="btn-save-pdf" onclick="savePdfAndComplete('+o.id+',this)">📄 Save PDF</button>'
-                + '<button class="btn-void-order" onclick="openVoidModal('+o.id+',\''+escAttr(o.label)+'\')">🚫 Void</button>'
-                + '</div>';
-        } else if(type==='completed'){
-            /* ── CHANGE: added 🗑️ Delete button for testing ── */
-            actionsHtml = '<div class="order-actions">'
-                + '<button class="btn-save-pdf" onclick="savePdfCompleted('+o.id+',this)">📄 Save PDF</button>'
-                + '<button class="btn-delete-order" onclick="deleteOrder('+o.id+',\''+escAttr(o.label)+'\')">🗑️ Delete</button>'
-                + '</div>';
+        if (type === 'active') {
+            actionsHtml =
+                '<button class="btn-edit-order" onclick="editOrder(' + o.id + ')">✏️ Edit</button>'
+              + '<button class="btn-save-pdf" onclick="savePdfAndComplete(' + o.id + ',this)">📄 Save PDF</button>'
+              + '<button class="btn-void-order" onclick="openVoidModal(' + o.id + ',\'' + escAttr(o.label) + '\')">🚫 Void</button>';
+        } else if (type === 'completed') {
+            actionsHtml =
+                '<button class="btn-save-pdf" onclick="savePdfCompleted(' + o.id + ',this)">📄 Save PDF</button>'
+              + '<button class="btn-delete-order" onclick="deleteOrder(' + o.id + ',\'' + escAttr(o.label) + '\')">🗑️ Delete</button>';
         }
 
-        return '<div class="order-card '+type+'" id="order-card-'+o.id+'" data-order=\''+escOrderData(o)+'\'>'
-            + '<div class="order-header" onclick="toggleOrder('+o.id+')">'
-            +   '<span class="order-expand-icon">▶</span>'
-            +   '<div class="order-label">'+escHtml(o.label)+statusBadge+'</div>'
-            +   '<div>'+typeBadge+'</div>'
-            +   '<div class="order-total">₱'+total.toFixed(2)+'</div>'
-            + '</div>'
-            + '<div class="order-body">'
-            +   '<div class="order-meta" style="padding-top:10px;font-size:11px;color:var(--text-muted);">'+o.created_at+' · '+o.cart.length+' item(s) · '+o.payment_method.toUpperCase()+'</div>'
-            +   '<div class="mini-receipt">'
-            +     '<div class="mini-receipt-header">'
-            +       '<img src="/static/logo.bmp" class="mini-receipt-logo-img" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">'
-            +       '<div class="mini-receipt-sub">Sales Invoice · '+o.created_at+'</div>'
-            +     '</div>'
-            +     '<hr class="mini-receipt-divider"/>'
-            +     receiptItems
-            +     '<hr class="mini-receipt-divider"/>'
-            +     discountRow
-            +     '<div class="mini-receipt-total"><span>Total:</span><span>₱'+total.toFixed(2)+'</span></div>'
-            +     '<div class="mini-receipt-row"><span>Payment</span><span>'+o.payment_method.toUpperCase()+'</span></div>'
-            +     (o.kitchen_notes ? '<div class="mini-receipt-row"><span>Notes</span><span style="font-style:italic;">'+escHtml(o.kitchen_notes)+'</span></div>' : '')
+        return '<div class="order-card ' + type + '" id="order-card-' + o.id + '" data-order=\'' + escOrderData(o) + '\'>'
+
+            /* ── Header: label + meta on left, badge + total on right ── */
+            + '<div class="card-header" onclick="toggleCard(' + o.id + ')">'
+            +   '<div class="card-header-left">'
+            +     '<div class="card-label">' + escHtml(o.label) + statusBadge + '</div>'
+            +     '<div class="card-meta">' + o.created_at + ' &middot; ' + o.cart.length + ' item(s) &middot; ' + o.payment_method.toUpperCase() + '</div>'
             +   '</div>'
-            +   voidInfoHtml
-            +   actionsHtml
+            +   '<div class="card-header-right">'
+            +     typeBadge
+            +     '<div class="card-total">₱' + total.toFixed(2) + '</div>'
+            +     '<span class="card-chevron" id="card-chevron-' + o.id + '">▾</span>'
+            +   '</div>'
+            + '</div>'
+
+            /* ── Body: 80% receipt preview | 20% action buttons ── */
+            + '<div class="card-body">'
+
+            +   '<div class="card-preview">'
+            +     '<div class="mini-receipt">'
+            +       '<div class="mini-receipt-header">'
+            +         '<img src="/static/logo.bmp" class="mini-receipt-logo-img"'
+            +              ' onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">'
+            +         '<div class="mini-receipt-logo" style="display:none;">SUPREMACY INTL</div>'
+            +         '<div class="mini-receipt-sub">Sales Invoice &middot; ' + o.created_at + '</div>'
+            +       '</div>'
+            +       '<hr class="mini-receipt-divider"/>'
+            +       receiptItems
+            +       '<hr class="mini-receipt-divider"/>'
+            +       discountRow
+            +       '<div class="mini-receipt-total"><span>Total:</span><span>₱' + total.toFixed(2) + '</span></div>'
+            +       '<div class="mini-receipt-row"><span>Payment</span><span>' + o.payment_method.toUpperCase() + '</span></div>'
+            +       (o.kitchen_notes
+                        ? '<div class="mini-receipt-row"><span>Notes</span><span style="font-style:italic;">' + escHtml(o.kitchen_notes) + '</span></div>'
+                        : '')
+            +     '</div>'
+            +     voidInfoHtml
+            +   '</div>'
+
+            +   '<div class="card-actions">'
+            +     actionsHtml
+            +   '</div>'
+
             + '</div>'
             + '</div>';
     }
 
-    function escHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-    function escAttr(str){return String(str).replace(/'/g,"&#39;").replace(/"/g,'&quot;');}
-    function escOrderData(o){return JSON.stringify(o).replace(/'/g,'&#39;');}
-    function getOrderFromCard(orderId){
-        var card = document.getElementById('order-card-'+orderId);
-        if(card){try{return JSON.parse(card.getAttribute('data-order'));}catch(e){}}
+    /* ── Utility functions ── */
+    function escHtml(str)      { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function escAttr(str)      { return String(str).replace(/'/g,"&#39;").replace(/"/g,'&quot;'); }
+    function escOrderData(o)   { return JSON.stringify(o).replace(/'/g,'&#39;'); }
+
+    function getOrderFromCard(orderId) {
+        var card = document.getElementById('order-card-' + orderId);
+        if (card) { try { return JSON.parse(card.getAttribute('data-order')); } catch(e) {} }
         return null;
     }
 
-    function buildReceiptPayload(order){
+    /* ── Build the receipt payload sent to /download_receipt ── */
+    function buildReceiptPayload(order) {
         var discAmt  = parseFloat(order.discount_amount) || 0;
         var netTotal = parseFloat(order.total)           || 0;
         var subtotal = parseFloat(order.subtotal)        || (netTotal + discAmt);
         return {
             sale_id:         'ORD-' + order.id,
             cashier:         order.cashier_name || '—',
+            cashier_id:      order.cashier_id != null ? String(order.cashier_id) : '',
             timestamp:       order.created_at,
-            items:           (order.cart || []).map(function(i){
-                return {name:i.name,qty:i.qty,price:i.price,discount:i.discount||0,notes:i.notes||''};
+            items:           (order.cart || []).map(function(i) {
+                return { name: i.name, qty: i.qty, price: i.price, discount: i.discount || 0, notes: i.notes || '' };
             }),
             subtotal:        subtotal,
             discount_amount: discAmt,
@@ -421,11 +611,12 @@
             payment_method:  order.payment_method || 'cash',
             cash_received:   0,
             change:          0,
-            kitchen_notes:   order.kitchen_notes  || ''
+            kitchen_notes:   order.kitchen_notes || ''
         };
     }
 
-    function triggerPdfDownload(blob, filename){
+    /* ── Trigger browser download of a PDF blob ── */
+    function triggerPdfDownload(blob, filename) {
         var url = window.URL.createObjectURL(blob);
         var a   = document.createElement('a');
         a.href  = url;
@@ -436,108 +627,187 @@
         window.URL.revokeObjectURL(url);
     }
 
-    function savePdfAndComplete(orderId, btn){
-        btn.disabled=true; btn.textContent='⏳ Generating...';
+    /* ── Save PDF + mark order complete (active orders) ── */
+    function savePdfAndComplete(orderId, btn) {
+        btn.disabled = true; btn.textContent = '⏳ Saving...';
         var order = getOrderFromCard(orderId);
-        if(!order){
-            fetch('/saved_orders',{cache:'no-store'})
-                .then(function(r){return r.json();})
-                .then(function(data){
-                    if(!data.success) throw new Error(data.error||'Failed to load orders');
-                    var found=(data.orders||[]).find(function(o){return Number(o.id)===Number(orderId);});
-                    if(!found) throw new Error('Order not found');
+        if (!order) {
+            fetch('/saved_orders', { cache: 'no-store' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (!data.success) throw new Error(data.error || 'Failed to load orders');
+                    var found = (data.orders || []).find(function(o) { return Number(o.id) === Number(orderId); });
+                    if (!found) throw new Error('Order not found');
                     return found;
                 })
-                .then(function(o){return _downloadAndComplete(o,orderId,btn);})
-                .catch(function(err){alert('Error: '+(err.message||'Unknown error'));btn.disabled=false;btn.textContent='📄 Save PDF';});
+                .then(function(o) { return _downloadAndComplete(o, orderId, btn); })
+                .catch(function(err) { alert('Error: ' + (err.message || 'Unknown error')); btn.disabled = false; btn.textContent = '📄 Save PDF'; });
             return;
         }
-        _downloadAndComplete(order,orderId,btn);
+        _downloadAndComplete(order, orderId, btn);
     }
 
-    function _downloadAndComplete(order, orderId, btn){
+    function _downloadAndComplete(order, orderId, btn) {
         var payload = buildReceiptPayload(order);
-        fetch('/download_receipt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
-        .then(function(r){
-            if(!r.ok){return r.json().then(function(e){throw new Error(e.error||'PDF generation failed (HTTP '+r.status+')');}).catch(function(){throw new Error('PDF generation failed (HTTP '+r.status+')');});}
-            return r.blob();
-        })
-        .then(function(blob){
-            triggerPdfDownload(blob,'order_'+orderId+'.pdf');
-            return fetch('/saved_orders/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})});
-        })
-        .then(function(r){return r.json();})
-        .then(function(d){if(!d.success) throw new Error(d.error||'Failed to mark order as complete');loadOrders();})
-        .catch(function(err){alert('Error: '+(err.message||'Unknown error'));btn.disabled=false;btn.textContent='📄 Save PDF';});
+        fetch('/download_receipt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+            .then(function(r) {
+                if (!r.ok) { return r.json().then(function(e) { throw new Error(e.error || 'PDF failed (HTTP ' + r.status + ')'); }).catch(function() { throw new Error('PDF failed (HTTP ' + r.status + ')'); }); }
+                return r.blob();
+            })
+            .then(function(blob) {
+                triggerPdfDownload(blob, 'order_' + orderId + '.pdf');
+                return fetch('/saved_orders/complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: orderId }) });
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(d) { if (!d.success) throw new Error(d.error || 'Failed to mark complete'); loadOrders(); })
+            .catch(function(err) { alert('Error: ' + (err.message || 'Unknown error')); btn.disabled = false; btn.textContent = '📄 Save PDF'; });
     }
 
-    function savePdfCompleted(orderId, btn){
-        btn.disabled=true; btn.textContent='⏳ Generating...';
+    /* ── Save PDF only (completed orders) ── */
+    function savePdfCompleted(orderId, btn) {
+        btn.disabled = true; btn.textContent = '⏳ Saving...';
         var order = getOrderFromCard(orderId);
-        if(!order){alert('Error: Could not read order data. Please refresh the page.');btn.disabled=false;btn.textContent='📄 Save PDF';return;}
+        if (!order) { alert('Error: Could not read order data. Please refresh the page.'); btn.disabled = false; btn.textContent = '📄 Save PDF'; return; }
         var payload = buildReceiptPayload(order);
-        fetch('/download_receipt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
-        .then(function(r){
-            if(!r.ok){return r.json().then(function(e){throw new Error(e.error||'PDF generation failed (HTTP '+r.status+')');}).catch(function(){throw new Error('PDF generation failed (HTTP '+r.status+')');});}
-            return r.blob();
-        })
-        .then(function(blob){triggerPdfDownload(blob,'order_'+orderId+'.pdf');})
-        .catch(function(err){alert('Error: '+(err.message||'Unknown error'));})
-        .finally(function(){btn.disabled=false;btn.textContent='📄 Save PDF';});
+        fetch('/download_receipt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+            .then(function(r) {
+                if (!r.ok) { return r.json().then(function(e) { throw new Error(e.error || 'PDF failed (HTTP ' + r.status + ')'); }).catch(function() { throw new Error('PDF failed (HTTP ' + r.status + ')'); }); }
+                return r.blob();
+            })
+            .then(function(blob) { triggerPdfDownload(blob, 'order_' + orderId + '.pdf'); })
+            .catch(function(err) { alert('Error: ' + (err.message || 'Unknown error')); })
+            .finally(function() { btn.disabled = false; btn.textContent = '📄 Save PDF'; });
     }
 
-    /* ── [NEW] Delete a completed order — for testing purposes only ── */
-    function deleteOrder(id, label){
-        if(!confirm('🗑️ Delete completed order "' + label + '"?\n\nThis permanently removes it from the database.\nFor testing purposes only.')) return;
-        fetch('/orders/saved/delete',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({id:id})
-        })
-        .then(function(r){return r.json();})
-        .then(function(data){
-            if(data.success){
-                loadOrders();
-            } else {
-                alert('Error: '+(data.error||'Could not delete order'));
-            }
-        })
-        .catch(function(err){alert('Network error: '+err.message);});
+    /* ── Delete a completed order (testing only) ── */
+    /* ── Toggle individual order card collapse ── */
+    function toggleCard(id) {
+        var body    = document.querySelector('#order-card-' + id + ' .card-body');
+        var chevron = document.getElementById('card-chevron-' + id);
+        if (!body) return;
+        var isCollapsed = body.classList.toggle('card-collapsed');
+        if (chevron) chevron.classList.toggle('rotated', isCollapsed);
     }
 
-    function toggleOrder(id){var card=document.getElementById('order-card-'+id);if(card)card.classList.toggle('open');}
-    function editOrder(id){window.location.href='/pos?order_id='+id;}
-    function openVoidModal(id,label){voidOrderId=id;voidPinBuffer='';voidAuthorizedPin='';document.getElementById('voidOrderName').textContent=label;document.getElementById('voidFormOrderName').textContent=label;document.getElementById('voidReason').value='';document.getElementById('voidResolution').value='';document.getElementById('pinError').textContent='';document.getElementById('formError').textContent='';updatePinDots();document.getElementById('phasePin').classList.add('active');document.getElementById('phaseForm').classList.remove('active');document.getElementById('voidModal').classList.add('visible');}
-    function closeVoidModal(){document.getElementById('voidModal').classList.remove('visible');voidOrderId=null;voidPinBuffer='';}
-    function updatePinDots(){for(var i=0;i<4;i++){var dot=document.getElementById('dot'+i);if(dot)dot.classList.toggle('filled',i<voidPinBuffer.length);}}
-    function pinKey(k){if(k==='del'){voidPinBuffer=voidPinBuffer.slice(0,-1);updatePinDots();document.getElementById('pinError').textContent='';return;}if(k==='clr'){voidPinBuffer='';updatePinDots();document.getElementById('pinError').textContent='';return;}if(voidPinBuffer.length>=8)return;voidPinBuffer+=k;updatePinDots();if(voidPinBuffer.length>=4){fetch('/orders/verify_pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:voidPinBuffer,order_id:voidOrderId})}).then(function(r){return r.json();}).then(function(data){if(data.success){voidAuthorizedPin=voidPinBuffer;document.getElementById('voidAuthUser').textContent=data.user;document.getElementById('phasePin').classList.remove('active');document.getElementById('phaseForm').classList.add('active');}else{document.getElementById('pinError').textContent=data.error||'Invalid PIN';voidPinBuffer='';updatePinDots();}});}}
-    function submitVoid(){var reason=document.getElementById('voidReason').value.trim();var resolution=document.getElementById('voidResolution').value.trim();if(!reason){document.getElementById('formError').textContent='Reason is required.';return;}fetch('/orders/void',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:voidOrderId,pin:voidAuthorizedPin,reason:reason,resolution:resolution})}).then(function(r){return r.json();}).then(function(data){if(data.success){closeVoidModal();loadOrders();}else document.getElementById('formError').textContent=data.error||'Error voiding order';});}
-    function openClearConfirm(){document.getElementById('clearModal').classList.add('visible');}
-    function closeClearModal(){document.getElementById('clearModal').classList.remove('visible');}
-    function confirmClear(){fetch('/saved_orders/clear',{method:'POST',headers:{'Content-Type':'application/json'}}).then(function(r){return r.json();}).then(function(data){closeClearModal();if(data.success){alert(data.message);if(data.download_url){var a=document.createElement('a');a.href=data.download_url;a.download='';a.click();}loadOrders();}else{alert('Error: '+data.error);}});}
+    function deleteOrder(id, label) {
+        if (!confirm('🗑️ Delete completed order "' + label + '"?\n\nThis permanently removes it from the database.\nFor testing purposes only.')) return;
+        fetch('/orders/saved/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) { loadOrders(); }
+            else { alert('Error: ' + (data.error || 'Could not delete order')); }
+        })
+        .catch(function(err) { alert('Network error: ' + err.message); });
+    }
+
+    /* ── Navigation helpers ── */
+    function editOrder(id) { window.location.href = '/pos?order_id=' + id; }
+
+    /* ── Void modal ── */
+    function openVoidModal(id, label) {
+        voidOrderId = id; voidPinBuffer = ''; voidAuthorizedPin = '';
+        document.getElementById('voidOrderName').textContent     = label;
+        document.getElementById('voidFormOrderName').textContent = label;
+        document.getElementById('voidReason').value     = '';
+        document.getElementById('voidResolution').value = '';
+        document.getElementById('pinError').textContent  = '';
+        document.getElementById('formError').textContent = '';
+        updatePinDots();
+        document.getElementById('phasePin').classList.add('active');
+        document.getElementById('phaseForm').classList.remove('active');
+        document.getElementById('voidModal').classList.add('visible');
+    }
+    function closeVoidModal() { document.getElementById('voidModal').classList.remove('visible'); voidOrderId = null; voidPinBuffer = ''; }
+    function updatePinDots() {
+        for (var i = 0; i < 4; i++) {
+            var dot = document.getElementById('dot' + i);
+            if (dot) dot.classList.toggle('filled', i < voidPinBuffer.length);
+        }
+    }
+    function pinKey(k) {
+        if (k === 'del') { voidPinBuffer = voidPinBuffer.slice(0, -1); updatePinDots(); document.getElementById('pinError').textContent = ''; return; }
+        if (k === 'clr') { voidPinBuffer = ''; updatePinDots(); document.getElementById('pinError').textContent = ''; return; }
+        if (voidPinBuffer.length >= 8) return;
+        voidPinBuffer += k;
+        updatePinDots();
+        if (voidPinBuffer.length >= 4) {
+            fetch('/orders/verify_pin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: voidPinBuffer, order_id: voidOrderId }) })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        voidAuthorizedPin = voidPinBuffer;
+                        document.getElementById('voidAuthUser').textContent = data.user;
+                        document.getElementById('phasePin').classList.remove('active');
+                        document.getElementById('phaseForm').classList.add('active');
+                    } else {
+                        document.getElementById('pinError').textContent = data.error || 'Invalid PIN';
+                        voidPinBuffer = ''; updatePinDots();
+                    }
+                });
+        }
+    }
+    function submitVoid() {
+        var reason     = document.getElementById('voidReason').value.trim();
+        var resolution = document.getElementById('voidResolution').value.trim();
+        if (!reason) { document.getElementById('formError').textContent = 'Reason is required.'; return; }
+        fetch('/orders/void', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: voidOrderId, pin: voidAuthorizedPin, reason: reason, resolution: resolution }) })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) { closeVoidModal(); loadOrders(); }
+                else { document.getElementById('formError').textContent = data.error || 'Error voiding order'; }
+            });
+    }
+
+    /* ── Clear all modal ── */
+    function openClearConfirm() { document.getElementById('clearModal').classList.add('visible'); }
+    function closeClearModal()  { document.getElementById('clearModal').classList.remove('visible'); }
+    function confirmClear() {
+        fetch('/saved_orders/clear', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                closeClearModal();
+                if (data.success) {
+                    alert(data.message);
+                    if (data.download_url) { var a = document.createElement('a'); a.href = data.download_url; a.download = ''; a.click(); }
+                    loadOrders();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+    }
+
     document.addEventListener('DOMContentLoaded', loadOrders);
     setInterval(loadOrders, 30000);
 </script>
+
 <script>
+    /* ── Sidebar collapse ── */
     var SIDEBAR_KEY = 'prim3pos_sidebar';
-    function toggleSidebar(){
-        var sidebar=document.getElementById('appSidebar');
-        var body=document.body;
-        var collapsed=sidebar.classList.toggle('collapsed');
-        body.classList.toggle('sidebar-collapsed-state',collapsed);
+    function toggleSidebar() {
+        var sidebar  = document.getElementById('appSidebar');
+        var body     = document.body;
+        var collapsed = sidebar.classList.toggle('collapsed');
+        body.classList.toggle('sidebar-collapsed-state', collapsed);
         updateToggleIcon(collapsed);
-        localStorage.setItem(SIDEBAR_KEY,collapsed?'1':'0');
+        localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0');
     }
-    function updateToggleIcon(collapsed){
-        var btn=document.getElementById('sidebarToggle');
-        if(!btn)return;
-        if(collapsed){btn.innerHTML='<div class="tog-ham-wrap"><div class="tog-line"></div><div class="tog-line"></div><div class="tog-line"></div></div>';}
-        else{btn.innerHTML='<div class="tog-x-wrap" id="togX"><div class="tog-x-line a"></div><div class="tog-x-line b"></div></div>';}
+    function updateToggleIcon(collapsed) {
+        var btn = document.getElementById('sidebarToggle');
+        if (!btn) return;
+        if (collapsed) {
+            btn.innerHTML = '<div class="tog-ham-wrap"><div class="tog-line"></div><div class="tog-line"></div><div class="tog-line"></div></div>';
+        } else {
+            btn.innerHTML = '<div class="tog-x-wrap" id="togX"><div class="tog-x-line a"></div><div class="tog-x-line b"></div></div>';
+        }
     }
-    (function initSidebar(){
-        if(localStorage.getItem(SIDEBAR_KEY)==='1'){
-            var sidebar=document.getElementById('appSidebar');
-            if(sidebar)sidebar.classList.add('collapsed');
+    (function initSidebar() {
+        if (localStorage.getItem(SIDEBAR_KEY) === '1') {
+            var sidebar = document.getElementById('appSidebar');
+            if (sidebar) sidebar.classList.add('collapsed');
             document.body.classList.add('sidebar-collapsed-state');
             updateToggleIcon(true);
         }
