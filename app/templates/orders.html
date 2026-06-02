@@ -31,238 +31,60 @@
         body{background:var(--bg);font-family:Arial,sans-serif;color:var(--text);min-height:100vh;display:flex;overflow-x:hidden;
             transition:background .25s,color .25s;}
         
-        /* ── Sidebar (collapsible) ────────────────────────────────── */
-        :root {
-            --sidebar-w: 240px;
-            --sidebar-collapsed-w: 64px;
-        }
-        .sidebar {
-            width: var(--sidebar-w);
-            background: var(--surface);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            padding: 0;
-            position: fixed;
-            height: 100vh;
-            z-index: 50;
-            transition: width .25s ease, background .25s, border-color .25s;
-        }
-        .sidebar.collapsed { width: var(--sidebar-collapsed-w); }
-
-        /* ── Sidebar header (logo + toggle) ── */
-        .sidebar-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 12px 0 16px;
-            height: 48px;
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
-            overflow: hidden;
-            transition: padding .25s ease;
-        }
-        .sidebar.collapsed .sidebar-header {
-            justify-content: center;
-            padding: 0;
-        }
-        .sidebar-header-logo {
-            font-size: 14px;
-            font-weight: 900;
-            color: var(--accent);
-            letter-spacing: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            opacity: 1;
-            transition: opacity .15s ease, width .25s ease;
-        }
-        .sidebar-header-logo span { color: var(--text); }
-        .sidebar.collapsed .sidebar-header-logo {
-            opacity: 0;
-            width: 0;
-            pointer-events: none;
-        }
-        .sidebar-toggle {
-            width: 28px;
-            height: 28px;
-            background: var(--surface2);
-            border: 1px solid var(--border2);
-            border-radius: 7px;
-            color: var(--text-muted);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            transition: background .2s, border-color .2s, color .2s;
-            position: relative;
-        }
-        .sidebar-toggle:hover {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #000;
-        }
-        .sidebar-toggle:hover .tog-line { background: #000; }
-        .tog-x-wrap, .tog-ham-wrap {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 3px;
-            transition: opacity .15s;
-        }
-        .tog-x-wrap {
-            position: relative;
-            width: 12px;
-            height: 12px;
-        }
-        .tog-x-line {
-            position: absolute;
-            width: 12px;
-            height: 1.5px;
-            background: var(--text-muted);
-            border-radius: 1px;
-            transition: background .2s;
-        }
-        .tog-x-line.a { transform: rotate(45deg); }
-        .tog-x-line.b { transform: rotate(-45deg); }
-        .sidebar-toggle:hover .tog-x-line { background: #000; }
-        .tog-line {
-            width: 12px;
-            height: 1.5px;
-            background: var(--text-muted);
-            border-radius: 1px;
-            transition: background .2s;
-        }
-
-
-
-        /* Nav */
-        .sidebar-nav { flex: 1; padding: 10px 0; overflow-y: auto; overflow-x: hidden; }
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 9px 18px;
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 13px;
-            transition: all .2s;
-            border-left: 3px solid transparent;
-            white-space: nowrap;
-        }
-        .nav-item:hover { color: var(--text); background: var(--surface2); }
-        .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--surface2); }
-        .nav-icon { font-size: 16px; flex-shrink: 0; }
-        .nav-label { transition: opacity .15s; }
-        .sidebar.collapsed .nav-label { opacity: 0; width: 0; overflow: hidden; }
-        .sidebar.collapsed .nav-item { justify-content: center; padding: 9px 0; border-left-color: transparent !important; }
-        .sidebar.collapsed .nav-item.active { border-left: none; border-right: 3px solid var(--accent); }
-
-        /* Tooltip on collapsed nav items */
-        .sidebar.collapsed .nav-item { position: relative; }
-        .sidebar.collapsed .nav-item::after {
-            content: attr(data-label);
-            position: absolute;
-            left: calc(var(--sidebar-collapsed-w) + 8px);
-            top: 50%;
-            transform: translateY(-50%);
-            background: var(--surface2);
-            color: var(--text);
-            border: 1px solid var(--border2);
-            border-radius: 6px;
-            padding: 5px 10px;
-            font-size: 12px;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity .15s;
-            z-index: 200;
-        }
-        .sidebar.collapsed .nav-item:hover::after { opacity: 1; }
-
-        /* Footer */
-        .sidebar-footer {
-            padding: 12px 16px;
-            border-top: 1px solid var(--border);
-            overflow: hidden;
-        }
-        .theme-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-        }
-        .theme-label-text { font-size: 12px; color: var(--text-muted); }
-        .theme-toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
-        .theme-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
-        .theme-toggle-track {
-            position: absolute; inset: 0; border-radius: 12px; cursor: pointer;
-            background: var(--surface2); border: 1px solid var(--border);
-            transition: background .25s, border-color .25s;
-        }
-        .theme-toggle input:checked+.theme-toggle-track { background: var(--accent); border-color: var(--accent); }
-        .theme-toggle-thumb {
-            position: absolute; top: 3px; left: 3px;
-            width: 16px; height: 16px; border-radius: 50%;
-            background: var(--text-muted); font-size: 9px;
-            display: flex; align-items: center; justify-content: center;
-            transition: transform .25s, background .25s; pointer-events: none;
-        }
-        .theme-toggle input:checked~.theme-toggle-thumb { transform: translateX(20px); background: #0d0d0d; }
-        .sidebar.collapsed .theme-row { justify-content: center; }
-        .sidebar.collapsed .sidebar-only { display: none; }
-
-        .user-info { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
-        .user-info strong { color: var(--text); display: block; font-size: 14px; }
-
-        .btn-logout {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            width: 100%;
-            padding: 8px;
-            background: var(--surface2);
-            color: var(--red);
-            border: 1px solid var(--red);
-            border-radius: 8px;
-            text-align: center;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 700;
-            transition: all .2s;
-            justify-content: center;
-            white-space: nowrap;
-            overflow: hidden;
-        }
-        .btn-logout:hover { background: var(--red); color: #fff; }
-        .logout-icon { flex-shrink: 0; }
-        /* collapsed logout icon */
-        .logout-icon-collapsed { display:none; flex-shrink:0; }
+        /* Sidebar */
+        :root { --sidebar-w: 240px; --sidebar-collapsed-w: 64px; }
+        .sidebar { width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;position:fixed;height:100vh;z-index:50;transition:width .25s ease,background .25s,border-color .25s; }
+        .sidebar.collapsed { width:var(--sidebar-collapsed-w); }
+        .sidebar-header { display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 16px;height:48px;border-bottom:1px solid var(--border);flex-shrink:0;overflow:hidden;transition:padding .25s ease; }
+        .sidebar.collapsed .sidebar-header { justify-content:center;padding:0; }
+        .sidebar-header-logo { font-size:14px;font-weight:900;color:var(--accent);letter-spacing:2px;white-space:nowrap;overflow:hidden;opacity:1;transition:opacity .15s ease,width .25s ease; }
+        .sidebar-header-logo span { color:var(--text); }
+        .sidebar.collapsed .sidebar-header-logo { opacity:0;width:0;pointer-events:none; }
+        .sidebar-toggle { width:28px;height:28px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,border-color .2s,color .2s;position:relative; }
+        .sidebar-toggle:hover { background:var(--accent);border-color:var(--accent);color:#000; }
+        .sidebar-toggle:hover .tog-line { background:#000; }
+        .tog-x-wrap,.tog-ham-wrap { display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:opacity .15s; }
+        .tog-x-wrap { position:relative;width:12px;height:12px; }
+        .tog-x-line { position:absolute;width:12px;height:1.5px;background:var(--text-muted);border-radius:1px;transition:background .2s; }
+        .tog-x-line.a { transform:rotate(45deg); }
+        .tog-x-line.b { transform:rotate(-45deg); }
+        .sidebar-toggle:hover .tog-x-line { background:#000; }
+        .tog-line { width:12px;height:1.5px;background:var(--text-muted);border-radius:1px;transition:background .2s; }
+        .sidebar-nav { flex:1;padding:10px 0;overflow-y:auto;overflow-x:hidden; }
+        .nav-item { display:flex;align-items:center;gap:12px;padding:9px 18px;color:var(--text-muted);text-decoration:none;font-size:13px;transition:all .2s;border-left:3px solid transparent;white-space:nowrap; }
+        .nav-item:hover { color:var(--text);background:var(--surface2); }
+        .nav-item.active { color:var(--accent);border-left-color:var(--accent);background:var(--surface2); }
+        .nav-icon { font-size:16px;flex-shrink:0; }
+        .nav-label { transition:opacity .15s; }
+        .sidebar.collapsed .nav-label { opacity:0;width:0;overflow:hidden; }
+        .sidebar.collapsed .nav-item { justify-content:center;padding:9px 0;border-left-color:transparent !important; }
+        .sidebar.collapsed .nav-item.active { border-left:none;border-right:3px solid var(--accent); }
+        .sidebar.collapsed .nav-item { position:relative; }
+        .sidebar.collapsed .nav-item::after { content:attr(data-label);position:absolute;left:calc(var(--sidebar-collapsed-w) + 8px);top:50%;transform:translateY(-50%);background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;font-size:12px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:200; }
+        .sidebar.collapsed .nav-item:hover::after { opacity:1; }
+        .sidebar-footer { padding:12px 16px;border-top:1px solid var(--border);overflow:hidden; }
+        .theme-row { display:flex;align-items:center;justify-content:space-between;margin-bottom:12px; }
+        .theme-label-text { font-size:12px;color:var(--text-muted); }
+        .theme-toggle { position:relative;width:44px;height:24px;flex-shrink:0; }
+        .theme-toggle input { opacity:0;width:0;height:0;position:absolute; }
+        .theme-toggle-track { position:absolute;inset:0;border-radius:12px;cursor:pointer;background:var(--surface2);border:1px solid var(--border);transition:background .25s,border-color .25s; }
+        .theme-toggle input:checked+.theme-toggle-track { background:var(--accent);border-color:var(--accent); }
+        .theme-toggle-thumb { position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text-muted);font-size:9px;display:flex;align-items:center;justify-content:center;transition:transform .25s,background .25s;pointer-events:none; }
+        .theme-toggle input:checked~.theme-toggle-thumb { transform:translateX(20px);background:#0d0d0d; }
+        .sidebar.collapsed .theme-row { justify-content:center; }
+        .sidebar.collapsed .sidebar-only { display:none; }
+        .user-info { font-size:12px;color:var(--text-muted);margin-bottom:8px; }
+        .user-info strong { color:var(--text);display:block;font-size:14px; }
+        .btn-logout { display:flex;align-items:center;gap:6px;width:100%;padding:8px;background:var(--surface2);color:var(--red);border:1px solid var(--red);border-radius:8px;text-align:center;text-decoration:none;font-size:13px;font-weight:700;transition:all .2s;justify-content:center;white-space:nowrap;overflow:hidden; }
+        .btn-logout:hover { background:var(--red);color:#fff; }
+        .logout-icon { flex-shrink:0; }
+        .logout-icon-collapsed { display:none;flex-shrink:0; }
         .sidebar.collapsed .logout-icon { display:none; }
         .sidebar.collapsed .logout-icon-collapsed { display:inline-flex; }
 
-
-        /* ── Main ── */
-        .main {
-            margin-left: var(--sidebar-w);
-            flex: 1;
-            padding: 18px;
-            min-width: 0;
-            transition: margin-left .25s ease;
-        }
-        .sidebar-collapsed-state .main {
-            margin-left: var(--sidebar-collapsed-w);
-        }
-        .theme-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-        .theme-label-text{font-size:12px;color:var(--text-muted);}
-        .theme-toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
-        .theme-toggle input{opacity:0;width:0;height:0;position:absolute;}
-        .theme-toggle-track{position:absolute;inset:0;border-radius:12px;cursor:pointer;background:var(--surface2);border:1px solid var(--border);transition:background .25s,border-color .25s;}
-        .theme-toggle input:checked+.theme-toggle-track{background:var(--accent);border-color:var(--accent);}
-        .theme-toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text-muted);font-size:9px;display:flex;align-items:center;justify-content:center;transition:transform .25s,background .25s;pointer-events:none;}
-        .theme-toggle input:checked~.theme-toggle-thumb{transform:translateX(20px);background:#0d0d0d;}
-
+        /* Main */
+        .main { margin-left:var(--sidebar-w);flex:1;padding:18px;min-width:0;transition:margin-left .25s ease; }
+        .sidebar-collapsed-state .main { margin-left:var(--sidebar-collapsed-w); }
         .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
         .page-title{font-size:24px;font-weight:700;}
         .page-subtitle{font-size:13px;color:var(--text-muted);margin-top:4px;}
@@ -309,6 +131,9 @@
         .btn-void-order:hover{background:var(--red);color:#fff;}
         .btn-save-pdf{flex:1;padding:9px;background:var(--surface2);color:var(--blue);border:1px solid var(--blue);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
         .btn-save-pdf:hover{background:var(--blue);color:#fff;}
+        /* ── [NEW] Delete button — testing only ── */
+        .btn-delete-order{flex:1;padding:9px;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border2);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
+        .btn-delete-order:hover{background:var(--red);color:#fff;border-color:var(--red);}
         .void-info{background:var(--surface-void);border:1px solid var(--border-void);border-radius:6px;padding:8px 12px;margin-top:8px;font-size:11px;}
         .void-info-label{color:var(--red);font-weight:700;margin-bottom:4px;}
         .void-info-row{color:var(--text-muted);margin-top:2px;}
@@ -413,7 +238,7 @@
     </div>
 </div>
 
-<!-- ── VOID MODAL ── -->
+<!-- VOID MODAL -->
 <div class="modal-overlay" id="voidModal">
     <div class="modal">
         <div class="phase active" id="phasePin">
@@ -452,7 +277,7 @@
     </div>
 </div>
 
-<!-- ── CLEAR CONFIRM MODAL ── -->
+<!-- CLEAR CONFIRM MODAL -->
 <div class="modal-overlay" id="clearModal">
     <div class="clear-modal">
         <div class="clear-modal-title">🗂️ Export &amp; Clear All Orders</div>
@@ -506,7 +331,7 @@
             ? '<span class="type-badge type-dine">Dine In</span>'
             : '<span class="type-badge type-take">Take Out</span>';
         var statusBadge = '';
-        if(type==='voided')   statusBadge = '<span class="void-badge">VOIDED</span>';
+        if(type==='voided')    statusBadge = '<span class="void-badge">VOIDED</span>';
         if(type==='completed') statusBadge = '<span class="completed-badge">✅ DONE</span>';
 
         var receiptItems = o.cart.map(function(item){
@@ -535,9 +360,10 @@
                 + '<button class="btn-void-order" onclick="openVoidModal('+o.id+',\''+escAttr(o.label)+'\')">🚫 Void</button>'
                 + '</div>';
         } else if(type==='completed'){
-            // Pass the order object as a JSON string attribute to avoid closure issues
+            /* ── CHANGE: added 🗑️ Delete button for testing ── */
             actionsHtml = '<div class="order-actions">'
                 + '<button class="btn-save-pdf" onclick="savePdfCompleted('+o.id+',this)">📄 Save PDF</button>'
+                + '<button class="btn-delete-order" onclick="deleteOrder('+o.id+',\''+escAttr(o.label)+'\')">🗑️ Delete</button>'
                 + '</div>';
         }
 
@@ -552,8 +378,7 @@
             +   '<div class="order-meta" style="padding-top:10px;font-size:11px;color:var(--text-muted);">'+o.created_at+' · '+o.cart.length+' item(s) · '+o.payment_method.toUpperCase()+'</div>'
             +   '<div class="mini-receipt">'
             +     '<div class="mini-receipt-header">'
-            +       '<img src="/static/logo.png" class="mini-receipt-logo-img" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">'
-            +       '<div class="mini-receipt-logo" style="display:none;">SUPREMACY INTL</div>'
+            +       '<img src="/static/logo.bmp" class="mini-receipt-logo-img" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">'
             +       '<div class="mini-receipt-sub">Sales Invoice · '+o.created_at+'</div>'
             +     '</div>'
             +     '<hr class="mini-receipt-divider"/>'
@@ -570,55 +395,25 @@
             + '</div>';
     }
 
-    // ── Helpers ────────────────────────────────────────────────────
     function escHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
     function escAttr(str){return String(str).replace(/'/g,"&#39;").replace(/"/g,'&quot;');}
-
-    /**
-     * Safely embed the order object as a single-quoted HTML attribute value.
-     * JSON.stringify already escapes double quotes, so we only need to escape
-     * single quotes for the attribute delimiter.
-     */
-    function escOrderData(o){
-        return JSON.stringify(o).replace(/'/g,'&#39;');
-    }
-
-    /**
-     * Read the cached order data stored in the card's data-order attribute.
-     * Falls back to a live fetch when the card is no longer in the DOM
-     * (shouldn't happen, but defensive).
-     */
+    function escOrderData(o){return JSON.stringify(o).replace(/'/g,'&#39;');}
     function getOrderFromCard(orderId){
         var card = document.getElementById('order-card-'+orderId);
-        if(card){
-            try{ return JSON.parse(card.getAttribute('data-order')); }
-            catch(e){}
-        }
+        if(card){try{return JSON.parse(card.getAttribute('data-order'));}catch(e){}}
         return null;
     }
 
-    // ── Build the saleData payload for /download_receipt ──────────
     function buildReceiptPayload(order){
-        /*
-         * subtotal = net total + discount  (reconstruct gross from what the
-         * server already gave us so we never double-subtract the discount)
-         */
         var discAmt  = parseFloat(order.discount_amount) || 0;
         var netTotal = parseFloat(order.total)           || 0;
         var subtotal = parseFloat(order.subtotal)        || (netTotal + discAmt);
-
         return {
             sale_id:         'ORD-' + order.id,
-            cashier:         'Order',
+            cashier:         order.cashier_name || '—',
             timestamp:       order.created_at,
             items:           (order.cart || []).map(function(i){
-                return {
-                    name:     i.name,
-                    qty:      i.qty,
-                    price:    i.price,
-                    discount: i.discount  || 0,
-                    notes:    i.notes     || ''
-                };
+                return {name:i.name,qty:i.qty,price:i.price,discount:i.discount||0,notes:i.notes||''};
             }),
             subtotal:        subtotal,
             discount_amount: discAmt,
@@ -630,7 +425,6 @@
         };
     }
 
-    // ── Trigger a PDF blob download in the browser ─────────────────
     function triggerPdfDownload(blob, filename){
         var url = window.URL.createObjectURL(blob);
         var a   = document.createElement('a');
@@ -642,120 +436,73 @@
         window.URL.revokeObjectURL(url);
     }
 
-    // ── Active order: Save PDF → mark complete ─────────────────────
     function savePdfAndComplete(orderId, btn){
-        btn.disabled    = true;
-        btn.textContent = '⏳ Generating...';
-
-        // Use the order data already embedded in the card (no extra fetch needed)
+        btn.disabled=true; btn.textContent='⏳ Generating...';
         var order = getOrderFromCard(orderId);
-
         if(!order){
-            // Fallback: fetch fresh from server if card data is unavailable
-            fetch('/saved_orders', {cache:'no-store'})
+            fetch('/saved_orders',{cache:'no-store'})
                 .then(function(r){return r.json();})
                 .then(function(data){
-                    if(!data.success) throw new Error(data.error || 'Failed to load orders');
-                    var found = (data.orders || []).find(function(o){
-                        // Compare as numbers to avoid type-mismatch with ===
-                        return Number(o.id) === Number(orderId);
-                    });
+                    if(!data.success) throw new Error(data.error||'Failed to load orders');
+                    var found=(data.orders||[]).find(function(o){return Number(o.id)===Number(orderId);});
                     if(!found) throw new Error('Order not found');
                     return found;
                 })
-                .then(function(o){ return _downloadAndComplete(o, orderId, btn); })
-                .catch(function(err){
-                    alert('Error: ' + (err.message || 'Unknown error'));
-                    btn.disabled    = false;
-                    btn.textContent = '📄 Save PDF';
-                });
+                .then(function(o){return _downloadAndComplete(o,orderId,btn);})
+                .catch(function(err){alert('Error: '+(err.message||'Unknown error'));btn.disabled=false;btn.textContent='📄 Save PDF';});
             return;
         }
-
-        _downloadAndComplete(order, orderId, btn);
+        _downloadAndComplete(order,orderId,btn);
     }
 
     function _downloadAndComplete(order, orderId, btn){
         var payload = buildReceiptPayload(order);
-
-        fetch('/download_receipt', {
-            method:  'POST',
-            headers: {'Content-Type':'application/json'},
-            body:    JSON.stringify(payload)
-        })
+        fetch('/download_receipt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
         .then(function(r){
-            if(!r.ok){
-                // Surface the server error message when available
-                return r.json().then(function(e){
-                    throw new Error(e.error || 'PDF generation failed (HTTP '+r.status+')');
-                }).catch(function(){
-                    throw new Error('PDF generation failed (HTTP '+r.status+')');
-                });
-            }
+            if(!r.ok){return r.json().then(function(e){throw new Error(e.error||'PDF generation failed (HTTP '+r.status+')');}).catch(function(){throw new Error('PDF generation failed (HTTP '+r.status+')');});}
             return r.blob();
         })
         .then(function(blob){
-            triggerPdfDownload(blob, 'order_' + orderId + '.pdf');
-            // Mark the order as completed only after the PDF has been triggered
-            return fetch('/saved_orders/complete', {
-                method:  'POST',
-                headers: {'Content-Type':'application/json'},
-                body:    JSON.stringify({id: orderId})
-            });
+            triggerPdfDownload(blob,'order_'+orderId+'.pdf');
+            return fetch('/saved_orders/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})});
         })
         .then(function(r){return r.json();})
-        .then(function(d){
-            if(!d.success) throw new Error(d.error || 'Failed to mark order as complete');
-            loadOrders();   // refresh the list
-        })
-        .catch(function(err){
-            alert('Error: ' + (err.message || 'Unknown error'));
-            btn.disabled    = false;
-            btn.textContent = '📄 Save PDF';
-        });
+        .then(function(d){if(!d.success) throw new Error(d.error||'Failed to mark order as complete');loadOrders();})
+        .catch(function(err){alert('Error: '+(err.message||'Unknown error'));btn.disabled=false;btn.textContent='📄 Save PDF';});
     }
 
-    // ── Completed order: Save PDF only ─────────────────────────────
     function savePdfCompleted(orderId, btn){
-        btn.disabled    = true;
-        btn.textContent = '⏳ Generating...';
-
+        btn.disabled=true; btn.textContent='⏳ Generating...';
         var order = getOrderFromCard(orderId);
-
-        if(!order){
-            alert('Error: Could not read order data. Please refresh the page.');
-            btn.disabled    = false;
-            btn.textContent = '📄 Save PDF';
-            return;
-        }
-
+        if(!order){alert('Error: Could not read order data. Please refresh the page.');btn.disabled=false;btn.textContent='📄 Save PDF';return;}
         var payload = buildReceiptPayload(order);
-
-        fetch('/download_receipt', {
-            method:  'POST',
-            headers: {'Content-Type':'application/json'},
-            body:    JSON.stringify(payload)
-        })
+        fetch('/download_receipt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
         .then(function(r){
-            if(!r.ok){
-                return r.json().then(function(e){
-                    throw new Error(e.error || 'PDF generation failed (HTTP '+r.status+')');
-                }).catch(function(){
-                    throw new Error('PDF generation failed (HTTP '+r.status+')');
-                });
-            }
+            if(!r.ok){return r.json().then(function(e){throw new Error(e.error||'PDF generation failed (HTTP '+r.status+')');}).catch(function(){throw new Error('PDF generation failed (HTTP '+r.status+')');});}
             return r.blob();
         })
-        .then(function(blob){
-            triggerPdfDownload(blob, 'order_' + orderId + '.pdf');
+        .then(function(blob){triggerPdfDownload(blob,'order_'+orderId+'.pdf');})
+        .catch(function(err){alert('Error: '+(err.message||'Unknown error'));})
+        .finally(function(){btn.disabled=false;btn.textContent='📄 Save PDF';});
+    }
+
+    /* ── [NEW] Delete a completed order — for testing purposes only ── */
+    function deleteOrder(id, label){
+        if(!confirm('🗑️ Delete completed order "' + label + '"?\n\nThis permanently removes it from the database.\nFor testing purposes only.')) return;
+        fetch('/orders/saved/delete',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({id:id})
         })
-        .catch(function(err){
-            alert('Error: ' + (err.message || 'Unknown error'));
+        .then(function(r){return r.json();})
+        .then(function(data){
+            if(data.success){
+                loadOrders();
+            } else {
+                alert('Error: '+(data.error||'Could not delete order'));
+            }
         })
-        .finally(function(){
-            btn.disabled    = false;
-            btn.textContent = '📄 Save PDF';
-        });
+        .catch(function(err){alert('Network error: '+err.message);});
     }
 
     function toggleOrder(id){var card=document.getElementById('order-card-'+id);if(card)card.classList.toggle('open');}
@@ -772,33 +519,29 @@
     setInterval(loadOrders, 30000);
 </script>
 <script>
-    /* ── Sidebar collapse ── */
     var SIDEBAR_KEY = 'prim3pos_sidebar';
-    function toggleSidebar() {
-        var sidebar   = document.getElementById('appSidebar');
-        var body      = document.body;
-        var collapsed = sidebar.classList.toggle('collapsed');
-        body.classList.toggle('sidebar-collapsed-state', collapsed);
+    function toggleSidebar(){
+        var sidebar=document.getElementById('appSidebar');
+        var body=document.body;
+        var collapsed=sidebar.classList.toggle('collapsed');
+        body.classList.toggle('sidebar-collapsed-state',collapsed);
         updateToggleIcon(collapsed);
-        localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0');
+        localStorage.setItem(SIDEBAR_KEY,collapsed?'1':'0');
     }
-    function updateToggleIcon(collapsed) {
-        var btn = document.getElementById('sidebarToggle');
-        if (!btn) return;
-        if (collapsed) {
-            btn.innerHTML = '<div class="tog-ham-wrap"><div class="tog-line"></div><div class="tog-line"></div><div class="tog-line"></div></div>';
-        } else {
-            btn.innerHTML = '<div class="tog-x-wrap" id="togX"><div class="tog-x-line a"></div><div class="tog-x-line b"></div></div>';
-        }
+    function updateToggleIcon(collapsed){
+        var btn=document.getElementById('sidebarToggle');
+        if(!btn)return;
+        if(collapsed){btn.innerHTML='<div class="tog-ham-wrap"><div class="tog-line"></div><div class="tog-line"></div><div class="tog-line"></div></div>';}
+        else{btn.innerHTML='<div class="tog-x-wrap" id="togX"><div class="tog-x-line a"></div><div class="tog-x-line b"></div></div>';}
     }
-    (function initSidebar() {
-        if (localStorage.getItem(SIDEBAR_KEY) === '1') {
-            var sidebar = document.getElementById('appSidebar');
-            if (sidebar) sidebar.classList.add('collapsed');
+    (function initSidebar(){
+        if(localStorage.getItem(SIDEBAR_KEY)==='1'){
+            var sidebar=document.getElementById('appSidebar');
+            if(sidebar)sidebar.classList.add('collapsed');
             document.body.classList.add('sidebar-collapsed-state');
             updateToggleIcon(true);
         }
     })();
-    </script>
+</script>
 </body>
 </html>

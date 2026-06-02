@@ -2,6 +2,7 @@ import csv
 import io
 import json
 import os
+from datetime import datetime, timezone, timedelta
 from flask import Blueprint, request, jsonify, current_app, send_file
 from flask_login import login_required, current_user
 from database import db, Sale, SaleItem, Product, SavedOrder, User
@@ -9,7 +10,10 @@ from app.services.order_service import calculate_total, normalize_cart, serializ
 from app.services.payment_service import calculate_change
 from app.services.audit_service import log_action
 from app.services.inventory_service import deduct_for_sale
-from datetime import datetime
+
+# Philippines Standard Time — UTC+8, no DST
+_PH_TZ = timezone(timedelta(hours=8))
+
 
 # ── ReportLab imports for PDF receipt generation ──────────────────
 from reportlab.lib.pagesizes import A7
@@ -50,11 +54,11 @@ def download_receipt():
         # ── Build PDF in memory ──────────────────────────────────
         buf = io.BytesIO()
 
-        # Thermal receipt width: 80 mm wide, dynamic height
-        page_w = 80 * mm
+        # Thermal receipt width: 58 mm wide, dynamic height
+        page_w = 58 * mm
 
-        # Estimate page height: header ~40mm + per-item ~7mm + footer ~40mm
-        page_h = (40 + len(items) * 7 + 50) * mm
+        # Estimate page height: header ~45mm + per-item ~7mm + footer ~50mm
+        page_h = (45 + len(items) * 7 + 50) * mm
         page_h = max(page_h, 120 * mm)
 
         c = rl_canvas.Canvas(buf, pagesize=(page_w, page_h))
@@ -83,10 +87,36 @@ def download_receipt():
             y -= 4.5 * mm
 
         # ── Header ───────────────────────────────────────────────
-        # Logo image (optional – silently skip if missing)
-        logo_path = os.path.join(current_app.root_path, "static", "logo.png")
-        if os.path.exists(logo_path):
-            logo_w, logo_h = 24 * mm, 10 * mm
+        # Logo image — probe multiple candidate directories so the file is
+        # found regardless of whether the Flask app package is at the project
+        # root or inside a subfolder (e.g.  project/app/__init__.py).
+        #
+        # Search order:
+        #   1. current_app.static_folder          (Flask's configured static dir)
+        #   2. <root_path>/static                  (same package, explicit)
+        #   3. <root_path>/../static               (project root when app lives
+        #                                           inside a subfolder like app/)
+        #   4. <instance_path>/../static           (extra safety net)
+        logo_path = None
+        _static_dirs = [
+            current_app.static_folder,
+            os.path.join(current_app.root_path, "static"),
+            os.path.join(os.path.dirname(current_app.root_path), "static"),
+            os.path.join(os.path.dirname(current_app.instance_path), "static"),
+        ]
+        for _dir in _static_dirs:
+            if not _dir:
+                continue
+            for _fname in ("logo.png", "logo.jpg", "logo.jpeg", "logo.webp", "logo.bmp"):
+                _candidate = os.path.join(_dir, _fname)
+                if os.path.isfile(_candidate):
+                    logo_path = _candidate
+                    break
+            if logo_path:
+                break
+
+        if logo_path:
+            logo_w, logo_h = 58 * mm, 20 * mm
             c.drawImage(
                 logo_path,
                 (page_w - logo_w) / 2, y - logo_h,
@@ -95,10 +125,7 @@ def download_receipt():
             )
             y -= logo_h + 2 * mm
 
-        c.setFont("Helvetica-Bold", 9)
-        c.drawCentredString(page_w / 2, y, "SUPREMACY INTL")
-        y -= 5 * mm
-        c.setFont("Helvetica", 6.5)
+        c.setFont("Helvetica-Bold", 6.5)
         c.drawCentredString(page_w / 2, y, "Sales Invoice")
         y -= 4 * mm
         c.drawCentredString(page_w / 2, y, timestamp)
@@ -106,7 +133,7 @@ def download_receipt():
         c.drawCentredString(page_w / 2, y, f"Order: {sale_id}")
         y -= 4 * mm
         c.drawCentredString(page_w / 2, y, f"Cashier: {cashier}")
-        y -= 3 * mm
+        y -= 4 * mm
 
         line_sep(dotted=True)
 
@@ -222,7 +249,6 @@ def checkout():
             discount_amount=total_discount,
             final_total=total,
             payment_method=payment_method,
-            cashier_id=current_user.id,
         )
         db.session.add(sale)
         db.session.flush()
@@ -244,7 +270,10 @@ def checkout():
         deduct_for_sale(cart, current_user.id)
         log_action(current_user.id, "CHECKOUT", f"Sale #{sale.id} total P{total}")
 
-        now = datetime.now()
+        # FIX: stamp the receipt in Philippine Standard Time (UTC+8), not bare
+        # server local time, so the printed time is always correct regardless
+        # of where the server is hosted.
+        now = datetime.now(tz=_PH_TZ)
         return jsonify({
             "success":         True,
             "sale_id":         sale.id,
@@ -327,7 +356,6 @@ def save_order():
             payment_method=data.get("payment_method", "cash"),
             kitchen_notes=data.get("kitchen_notes", ""),
             order_type=data.get("order_type", "dine_in"),
-            cashier_id=current_user.id,
         )
         db.session.add(order)
         db.session.commit()
@@ -377,6 +405,56 @@ def complete_order():
     log_action(current_user.id, "COMPLETE_ORDER", f"Order #{order.id}")
     return jsonify({"success": True})
 
+
+
+# ── [TEST] Full-delete a completed order (SavedOrder + Sale + SaleItems) ──
+# Wipes every DB record created by this order so it never appears in
+# sales totals, reports, or transaction history.
+# Intended for development/testing only. Remove before production.
+@orders_bp.route("/orders/saved/delete", methods=["POST"])
+@login_required
+def delete_order():
+    data  = request.get_json() or {}
+    order = db.session.get(SavedOrder, data.get("id"))
+    if not order:
+        return jsonify({"success": False, "error": "Order not found"})
+    if not order.is_completed:
+        return jsonify({"success": False, "error": "Only completed orders can be deleted this way"})
+
+    deleted_sale_id = None
+
+    # ── Find and delete the linked Sale + SaleItems ────────────────────────
+    # Labels created by savePdfAndComplete() are "Sale #<id>", so we can
+    # extract the Sale.id directly and nuke both the parent and child rows.
+    try:
+        label = (order.label or "").strip()
+        if label.lower().startswith("sale #"):
+            sale_id = int(label.split("#", 1)[1].strip())
+            sale    = db.session.get(Sale, sale_id)
+            if sale:
+                # Delete child SaleItems first (guards against missing CASCADE)
+                SaleItem.query.filter_by(sale_id=sale.id).delete(synchronize_session=False)
+                db.session.delete(sale)
+                deleted_sale_id = sale.id
+    except Exception:
+        # Non-standard label or Sale already absent — skip silently
+        pass
+
+    # ── Delete the SavedOrder itself ─────────────────────────────────
+    db.session.delete(order)
+    db.session.commit()
+
+    log_action(
+        current_user.id,
+        "DELETE_ORDER_TEST",
+        f"Full-delete completed order #{order.id} '{order.label}'"
+        + (f" + Sale #{deleted_sale_id} + SaleItems" if deleted_sale_id else ""),
+    )
+    return jsonify({
+        "success":          True,
+        "deleted_order_id": order.id,
+        "deleted_sale_id":  deleted_sale_id,
+    })
 
 # ── Void a saved order (requires PIN) ─────────────────────────────
 @orders_bp.route("/orders/void", methods=["POST"])

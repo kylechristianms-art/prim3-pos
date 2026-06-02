@@ -679,7 +679,7 @@
     <div class="checkout-modal">
         <div class="receipt-side">
             <div class="receipt-header">
-                <img src="/static/logo.png" class="receipt-logo-img"
+                <img src="/static/logo.bmp" class="receipt-logo-img"
                      onerror="this.style.display='none';document.getElementById('receiptTextLogo').style.display='block'"/>
                 <div id="receiptTextLogo" style="display:none;">
                     <div class="receipt-logo">SUPREMACY INTERNATIONAL</div>
@@ -1240,6 +1240,8 @@
         if (show) document.getElementById('changeAmount').textContent = '₱' + (cash - t.total).toFixed(2);
     }
 
+    // ── checkout(): validate only — NO Sale is written here.
+    // The Sale record is only committed when the user clicks "Complete Sale".
     function checkout() {
         if (cart.length === 0) return;
         var t    = calcTotals();
@@ -1247,21 +1249,33 @@
         if (selectedPayment === 'cash' && cash < t.total) { alert('Cash received is less than the total amount!'); return; }
         var payMethod = selectedPayment;
         if (selectedPayment === 'other') { var custom = document.getElementById('otherPaymentLabel').value.trim(); if (custom) payMethod = custom; }
-        var checkoutItems = cart.map(function(item) {
-            return { id: item.id, name: item.name, price: item.price, qty: item.qty, discount: item.discount || 0, pwdDiscount: item.pwdDiscount || false, notes: item.notes, addons: item.addons || [] };
-        });
-        fetch('/orders/checkout', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cart: checkoutItems, payment_method: payMethod, cash_received: cash, discount_amount: t.totalDisc, kitchen_notes: document.getElementById('kitchenNotes').value.trim() })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) { if (data.success) { lastSaleData = data; showReceipt(data); } else { alert('Checkout failed: ' + data.error); } })
-        .catch(function(err) { alert('Network error: ' + err); });
+
+        // Build a local preview object matching the shape showReceipt() expects.
+        // sale_id is null until completeSale() writes the real DB row.
+        var previewData = {
+            sale_id:        null,
+            cashier:        '',
+            timestamp:      new Date().toLocaleString('en-PH', { month:'short', day:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true }),
+            items:          cart.map(function(item) {
+                return { id: item.id, name: item.name, price: item.price, qty: item.qty,
+                         discount: item.discount || 0, pwdDiscount: item.pwdDiscount || false,
+                         notes: item.notes || '', addons: item.addons || [] };
+            }),
+            subtotal:       t.subtotal,
+            discount_amount:t.totalDisc,
+            total:          t.total,
+            payment_method: payMethod,
+            cash_received:  cash,
+            change:         selectedPayment === 'cash' ? Math.max(0, cash - t.total) : 0,
+            kitchen_notes:  document.getElementById('kitchenNotes').value.trim()
+        };
+        lastSaleData = previewData;
+        showReceipt(previewData);
     }
 
     function showReceipt(data) {
         document.getElementById('receiptDate').textContent   = data.timestamp;
-        document.getElementById('receiptSaleId').textContent = 'Sale #' + data.sale_id;
+        document.getElementById('receiptSaleId').textContent = data.sale_id ? 'Sale #' + data.sale_id : 'PREVIEW — not saved yet';
         document.getElementById('receiptItems').innerHTML = data.items.map(function(item) {
             var price = parseFloat(item.price) || 0, qty = parseInt(item.qty) || 0, disc = parseFloat(item.discount) || 0;
             var pwdDisc = item.pwdDiscount || false, addons = item.addons || [];
@@ -1302,51 +1316,100 @@
 
     function editSale() { document.getElementById('receiptModal').classList.remove('visible'); }
 
+    // ── completeSale(): THE only place a Sale row is written to the DB.
+    // Flow:
+    //   1. POST /orders/checkout  → creates Sale + SaleItems, returns sale_id
+    //   2a. If editing a SavedOrder: UPDATE it (not create) with final cart, then mark complete
+    //   2b. If new sale: create a new SavedOrder labelled "Sale #<id>", mark it complete
     function completeSale() {
-        if (!lastSaleData || !lastSaleData.sale_id) { newSale(); return; }
+        if (!lastSaleData) { newSale(); return; }
 
-        fetch('/orders/complete_sale', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sale_id: lastSaleData.sale_id }) })
+        var t           = calcTotals();
+        var cash        = parseFloat(document.getElementById('cashReceived').value) || 0;
+        var payMethod   = lastSaleData.payment_method;
+        var checkoutItems = (lastSaleData.items || []).map(function(item) {
+            return { id: item.id, name: item.name, price: item.price, qty: item.qty,
+                     discount: item.discount || 0, pwdDiscount: item.pwdDiscount || false,
+                     notes: item.notes || '', addons: item.addons || [] };
+        });
+
+        // Step 1: Write the Sale record (the ONLY place this happens)
+        fetch('/orders/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                cart:           checkoutItems,
+                payment_method: payMethod,
+                cash_received:  cash,
+                discount_amount:t.totalDisc,
+                kitchen_notes:  document.getElementById('kitchenNotes').value.trim()
+            })
+        })
         .then(function(r) { return r.json(); })
-        .then(function() {
+        .then(function(data) {
+            if (!data.success) { alert('Checkout failed: ' + data.error); return Promise.reject('checkout failed'); }
+            // Merge real sale_id into lastSaleData for PDF/print
+            lastSaleData = Object.assign({}, lastSaleData, data);
+
+            var cartToSave = cart.map(function(i) {
+                return { id: i.id, name: i.name, price: i.price, qty: i.qty,
+                         discount: i.discount || 0, pwdDiscount: i.pwdDiscount || false,
+                         notes: i.notes || '', addons: i.addons || [], categoryId: i.categoryId || '' };
+            });
+            var saleLabel = 'Sale #' + data.sale_id;
+
+            // Step 2a: Editing a saved order — UPDATE it then mark complete (no new row)
             if (editingOrderId) {
-                return fetch('/orders/saved/complete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: editingOrderId })
-                }).then(function(r) { return r.json(); });
-            } else {
-                var cartToSave = cart.map(function(i) {
-                    return { id: i.id, name: i.name, price: i.price, qty: i.qty,
-                             discount: i.discount || 0, pwdDiscount: i.pwdDiscount || false,
-                             notes: i.notes || '', addons: i.addons || [], categoryId: i.categoryId || '' };
-                });
-                var t = calcTotals();
-                return fetch('/orders/saved/save', {
+                return fetch('/orders/saved/update', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        label: 'Sale #' + lastSaleData.sale_id,
-                        cart: cartToSave,
-                        discount_amount: t.totalDisc,
-                        payment_method: lastSaleData.payment_method,
-                        kitchen_notes: document.getElementById('kitchenNotes').value.trim(),
-                        order_type: selectedOrderType
+                        id:             editingOrderId,
+                        label:          saleLabel,
+                        cart:           cartToSave,
+                        discount_amount:t.totalDisc,
+                        payment_method: payMethod,
+                        kitchen_notes:  document.getElementById('kitchenNotes').value.trim(),
+                        order_type:     selectedOrderType
                     })
                 })
                 .then(function(r) { return r.json(); })
-                .then(function(saved) {
-                    if (saved.success && saved.id) {
-                        return fetch('/orders/saved/complete', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ id: saved.id })
-                        }).then(function(r) { return r.json(); });
-                    }
-                });
+                .then(function() {
+                    return fetch('/orders/saved/complete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: editingOrderId })
+                    });
+                })
+                .then(function(r) { return r.json(); });
             }
+
+            // Step 2b: New sale — create a SavedOrder and immediately mark it complete
+            return fetch('/orders/saved/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    label:          saleLabel,
+                    cart:           cartToSave,
+                    discount_amount:t.totalDisc,
+                    payment_method: payMethod,
+                    kitchen_notes:  document.getElementById('kitchenNotes').value.trim(),
+                    order_type:     selectedOrderType
+                })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(saved) {
+                if (saved.success && saved.id) {
+                    return fetch('/orders/saved/complete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: saved.id })
+                    }).then(function(r) { return r.json(); });
+                }
+            });
         })
         .then(function() { newSale(); })
-        .catch(function(err) { console.warn('completeSale error:', err); newSale(); });
+        .catch(function(err) { if (err !== 'checkout failed') { console.warn('completeSale error:', err); newSale(); } });
     }
 
     function newSale() {

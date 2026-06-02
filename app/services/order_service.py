@@ -1,4 +1,8 @@
 import json
+from datetime import timezone, timedelta
+
+# Philippines Standard Time — UTC+8 (no DST)
+_PH_TZ = timezone(timedelta(hours=8))
 
 
 def calculate_total(cart, discount_amount):
@@ -73,19 +77,42 @@ def serialize_order(order):
     except Exception:
         cart = []
 
-    subtotal, discount, total = calculate_total(cart, order.discount_amount)
+    # Enrich cart so PWD items carry their per-line discount for the PDF
+    enriched_cart = calculate_cart_with_item_discounts(cart, float(order.discount_amount or 0))
 
+    subtotal, total_discount, total = calculate_total(cart, float(order.discount_amount or 0))
+
+    # Convert created_at to PH time (UTC+8) before formatting.
     try:
-        created_at_str = order.created_at.strftime("%b %d, %Y %I:%M %p")
+        dt = order.created_at.replace(tzinfo=timezone.utc).astimezone(_PH_TZ)
+        created_at_str = dt.strftime("%b %d, %Y %I:%M %p")
     except Exception:
         created_at_str = ""
+
+    # ── FIX: Cashier name — try cashier_id direct DB lookup FIRST so that a
+    # detached or unloaded ORM relationship can never suppress the fallback.
+    # The original code wrapped both the relationship check AND the elif branch
+    # inside one try/except, meaning any exception from order.cashier (e.g.
+    # DetachedInstanceError) would swallow the entire block and return "—"
+    # without ever attempting the direct lookup
+    cashier_name = "—"
+
+    # Step 2: Fall back to ORM relationship if Step 1 didn't resolve
+    if cashier_name == "—":
+        try:
+            if order.cashier and order.cashier.name:
+                cashier_name = order.cashier.name
+        except Exception:
+            pass
 
     return {
         "id":              order.id,
         "label":           order.label or "",
-        "cart":            cart,
+        # Return enriched cart so per-item PWD discounts are present for PDF rendering
+        "cart":            enriched_cart,
         "subtotal":        subtotal,
-        "discount_amount": round(float(order.discount_amount or 0), 2),
+        # Expose the FULL total discount (order-level + item flat discounts)
+        "discount_amount": round(total_discount, 2),
         "total":           total,
         "is_void":         bool(order.is_void),
         "is_completed":    bool(order.is_completed),
@@ -95,4 +122,6 @@ def serialize_order(order):
         "void_reason":     order.void_reason     or "",
         "void_resolution": order.void_resolution or "",
         "created_at":      created_at_str,
+        # Cashier name resolved via direct DB lookup first, then ORM relationship
+        "cashier_name":    cashier_name,
     }

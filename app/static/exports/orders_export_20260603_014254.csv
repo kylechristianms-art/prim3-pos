@@ -1,0 +1,8 @@
+ID,Label,Subtotal,Discount,Total,Payment,Type,Status,Created At,Void Reason,Void Resolution
+1,Sale #107,59.00,0.00,59.00,gcash,dine_in,COMPLETED,2026-06-02 01:45,,
+2,Sale #108,186.00,0.00,186.00,cash,takeout,COMPLETED,2026-06-02 04:51,,
+3,Sale #113,558.00,0.00,558.00,gcash,dine_in,COMPLETED,2026-06-02 07:10,,
+5,Sale #121,176.00,0.00,176.00,KC - ORDER,dine_in,COMPLETED,2026-06-02 07:53,,
+6,Sale #123,88.00,0.00,88.00,cash,takeout,COMPLETED,2026-06-02 09:41,,
+7,Sale #124,495.00,99.00,396.00,cash,dine_in,COMPLETED,2026-06-02 11:46,,
+8,Sale #125,99.00,0.00,99.00,gcash,takeout,COMPLETED,2026-06-02 13:33,,
