@@ -271,6 +271,32 @@
         }
         .btn-delete-order:hover { background: var(--red); color: #fff; border-color: var(--red); }
 
+        .btn-print-receipt {
+            width: 100%; padding: 9px 4px;
+            background: var(--surface2); color: var(--accent);
+            border: 1px solid var(--accent); border-radius: 7px;
+            font-size: 11px; font-weight: 700;
+            cursor: pointer; transition: all .2s;
+            text-align: center; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .btn-print-receipt:hover { background: var(--accent); color: #000; }
+
+        /* ── Print Receipt Modal ── */
+        .print-modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:150;align-items:center;justify-content:center;padding:20px; }
+        .print-modal-overlay.visible { display:flex; }
+        .print-modal { background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:100%;max-width:360px;transition:background .25s; }
+        .print-modal-title { font-size:15px;font-weight:700;margin-bottom:5px; }
+        .print-modal-sub { font-size:11px;color:var(--text-muted);margin-bottom:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .print-modal-printers { display:flex;flex-direction:column;gap:8px;margin-bottom:12px; }
+        .order-printer-btn { width:100%;padding:11px 13px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-align:left;transition:all .2s; }
+        .order-printer-btn:hover { background:var(--surface3);border-color:var(--accent);color:var(--accent); }
+        .order-printer-sub { font-size:10px;color:var(--text-dim);font-weight:400;display:block;margin-top:2px; }
+        .order-print-status { font-size:11px;text-align:center;padding:6px;border-radius:5px;min-height:14px;margin-bottom:10px; }
+        .order-print-status.success { background:var(--surface-done);color:var(--green);border:1px solid var(--border-done); }
+        .order-print-status.error { background:var(--surface-void);color:var(--red);border:1px solid var(--border-void); }
+        .no-order-printers { font-size:11px;color:var(--text-dim);padding:8px 0;text-align:center; }
+
         /* ── Modals ── */
         .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100;align-items:center;justify-content:center;padding:20px; }
         .modal-overlay.visible { display:flex; }
@@ -368,6 +394,21 @@
         <div>
             <div class="orders-section-title">🚫 Voided Transactions <span class="column-count" id="voidedCount">0</span></div>
             <div id="voidedOrders"><div class="empty-col">Loading...</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- PRINT RECEIPT MODAL -->
+<div class="print-modal-overlay" id="printModal">
+    <div class="print-modal">
+        <div class="print-modal-title">🖨️ Print Receipt</div>
+        <div class="print-modal-sub" id="printModalSub">Select a printer below.</div>
+        <div class="print-modal-printers" id="printModalPrinters">
+            <div class="no-order-printers">Loading printers...</div>
+        </div>
+        <div class="order-print-status" id="orderPrintStatus"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closePrintModal()">Close</button>
         </div>
     </div>
 </div>
@@ -527,10 +568,12 @@
             actionsHtml =
                 '<button class="btn-edit-order" onclick="editOrder(' + o.id + ')">✏️ Edit</button>'
               + '<button class="btn-save-pdf" onclick="savePdfAndComplete(' + o.id + ',this)">📄 Save PDF</button>'
+              + '<button class="btn-print-receipt" onclick="printReceipt(' + o.id + ')">🖨️ Print Receipt</button>'
               + '<button class="btn-void-order" onclick="openVoidModal(' + o.id + ',\'' + escAttr(o.label) + '\')">🚫 Void</button>';
         } else if (type === 'completed') {
             actionsHtml =
                 '<button class="btn-save-pdf" onclick="savePdfCompleted(' + o.id + ',this)">📄 Save PDF</button>'
+              + '<button class="btn-print-receipt" onclick="printReceipt(' + o.id + ')">🖨️ Print Receipt</button>'
               + '<button class="btn-delete-order" onclick="deleteOrder(' + o.id + ',\'' + escAttr(o.label) + '\')">🗑️ Delete</button>';
         }
 
@@ -545,12 +588,12 @@
             +   '<div class="card-header-right">'
             +     typeBadge
             +     '<div class="card-total">₱' + total.toFixed(2) + '</div>'
-            +     '<span class="card-chevron" id="card-chevron-' + o.id + '">▾</span>'
+            +     '<span class="card-chevron rotated" id="card-chevron-' + o.id + '">▾</span>'
             +   '</div>'
             + '</div>'
 
             /* ── Body: 80% receipt preview | 20% action buttons ── */
-            + '<div class="card-body">'
+            + '<div class="card-body card-collapsed">'
 
             +   '<div class="card-preview">'
             +     '<div class="mini-receipt">'
@@ -680,6 +723,74 @@
     }
 
     /* ── Delete a completed order (testing only) ── */
+    /* ── Print receipt via thermal printer modal ── */
+    var currentPrintPayload = null;
+
+    function printReceipt(orderId) {
+        var order = getOrderFromCard(orderId);
+        if (!order) { alert('Error: Could not read order data. Please refresh the page.'); return; }
+        currentPrintPayload = buildReceiptPayload(order);
+
+        var subEl = document.getElementById('printModalSub');
+        if (subEl) subEl.textContent = 'Order: ' + (order.label || ('Order #' + orderId));
+
+        var statusEl = document.getElementById('orderPrintStatus');
+        if (statusEl) { statusEl.textContent = ''; statusEl.className = 'order-print-status'; }
+
+        document.getElementById('printModal').classList.add('visible');
+        loadOrderPrinters();
+    }
+
+    function closePrintModal() {
+        document.getElementById('printModal').classList.remove('visible');
+        currentPrintPayload = null;
+    }
+
+    function loadOrderPrinters() {
+        var list = document.getElementById('printModalPrinters');
+        list.innerHTML = '<div class="no-order-printers">Loading printers...</div>';
+        fetch('/print/printers')
+            .then(function(r) { return r.json(); })
+            .then(function(data) { renderOrderPrinters(data.printers || []); })
+            .catch(function() { list.innerHTML = '<div class="no-order-printers">Failed to load printers.</div>'; });
+    }
+
+    function renderOrderPrinters(printers) {
+        var list = document.getElementById('printModalPrinters');
+        var receiptPrinters = printers.filter(function(p) { return p.printer_type === 'receipt'; });
+        if (receiptPrinters.length === 0) {
+            list.innerHTML = '<div class="no-order-printers">No receipt printers saved yet.<br>Add one in the POS checkout screen.</div>';
+            return;
+        }
+        list.innerHTML = receiptPrinters.map(function(p) {
+            return '<button class="order-printer-btn" onclick="printOrderTo(\'' + p.port.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\',\'' + escAttr(p.name) + '\')">'
+                + '🧾 ' + escHtml(p.name)
+                + '<span class="order-printer-sub">' + escHtml(p.port) + '</span>'
+                + '</button>';
+        }).join('');
+    }
+
+    function printOrderTo(port, name) {
+        if (!currentPrintPayload) return;
+        var statusEl = document.getElementById('orderPrintStatus');
+        statusEl.textContent = 'Sending to ' + name + '...';
+        statusEl.className = 'order-print-status';
+        fetch('/print/print_receipt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.assign({}, currentPrintPayload, { port: port }))
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            statusEl.textContent = data.success ? '✓ Sent to ' + name + '!' : 'Failed: ' + (data.error || 'Unknown error');
+            statusEl.className = 'order-print-status ' + (data.success ? 'success' : 'error');
+        })
+        .catch(function(err) {
+            statusEl.textContent = 'Error: ' + (err.message || 'Network error');
+            statusEl.className = 'order-print-status error';
+        });
+    }
+
     /* ── Toggle individual order card collapse ── */
     function toggleCard(id) {
         var body    = document.querySelector('#order-card-' + id + ' .card-body');

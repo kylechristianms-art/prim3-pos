@@ -330,12 +330,12 @@
         .modal-overlay.visible { display: flex; }
         .checkout-modal {
             background: var(--modal-bg); border: 1px solid var(--border);
-            border-radius: 16px; width: 100%; max-width: 780px; max-height: 90vh;
+            border-radius: 16px; width: 100%; max-width: 680px; max-height: 88vh;
             display: flex; overflow: hidden;
         }
         .receipt-side {
-            width: 300px; background: #fff; color: #000; flex-shrink: 0;
-            overflow-y: auto; padding: 24px 20px; font-family: 'Courier New', monospace;
+            flex: 0 0 55%; min-width: 0; background: #fff; color: #000;
+            overflow-y: auto; padding: 18px 16px; font-family: 'Courier New', monospace;
         }
         .receipt-header { text-align: center; margin-bottom: 12px; }
         .receipt-logo { font-size: 15px; font-weight: 900; letter-spacing: 2px; }
@@ -352,31 +352,33 @@
         .receipt-row { display: flex; justify-content: space-between; font-size: 11px; color: #555; margin-top: 3px; }
         .receipt-footer { text-align: center; font-size: 10px; color: #888; margin-top: 10px; }
         .actions-side {
-            flex: 1; display: flex; flex-direction: column;
-            padding: 20px 18px; gap: 12px; overflow-y: auto;
+            flex: 0 0 45%; min-width: 0; display: flex; flex-direction: column;
+            padding: 16px 12px; gap: 11px; overflow-y: auto;
         }
-        .actions-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
-        .top-actions { display: flex; gap: 7px; }
-        .btn-complete-sale {
-            flex: 1; padding: 10px; background: var(--accent); color: #000; border: none;
-            border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer;
+        .actions-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 0; text-align: center; }
+        /* ── Row-card action buttons ── */
+        .action-cards { display: flex; flex-direction: column; gap: 6px; }
+        .action-card {
+            width: 100%; display: flex; align-items: center; gap: 11px;
+            padding: 10px 13px; border-radius: 9px; cursor: pointer;
+            text-align: left; transition: all 0.18s; background: none;
         }
-        .btn-complete-sale:hover { background: var(--accent-h); }
-        .btn-edit {
-            flex: 1; padding: 10px; background: var(--green); color: #000; border: none;
-            border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer;
-        }
-        .btn-edit:hover { filter: brightness(.85); }
-        .btn-pdf {
-            flex: 1; padding: 10px; background: var(--surface2); color: var(--text); border: 1px solid var(--border2);
-            border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer;
-        }
-        .btn-pdf:hover { background: var(--surface3); border-color: var(--text-dim); }
-        .btn-save-order {
-            flex: 1; padding: 10px; background: var(--surface2); color: var(--accent); border: 1px solid var(--accent);
-            border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
-        }
-        .btn-save-order:hover { background: var(--cat-selected-bg); }
+        .action-card-icon { font-size: 17px; flex-shrink: 0; line-height: 1; }
+        .action-card-body { flex: 1; min-width: 0; }
+        .action-card-label { font-size: 12px; font-weight: 700; }
+        .action-card-sub { font-size: 10px; margin-top: 2px; color: var(--text-muted); }
+        .action-card-arrow { font-size: 16px; flex-shrink: 0; opacity: 0.45; }
+        .action-card--primary { background: var(--cat-selected-bg); border: 1px solid var(--accent); }
+        .action-card--primary .action-card-label { color: var(--accent); }
+        .action-card--primary:hover { filter: brightness(1.12); }
+        .action-card--green { background: var(--dine-badge-bg); border: 1px solid var(--green); }
+        .action-card--green .action-card-label { color: var(--green); }
+        .action-card--green:hover { filter: brightness(1.12); }
+        .action-card--muted { background: var(--surface2); border: 1px solid var(--border2); }
+        .action-card--muted .action-card-label { color: var(--text); }
+        .action-card--muted:hover { border-color: var(--accent); }
+        .action-card--muted:hover .action-card-label { color: var(--accent); }
+        .action-card--muted:hover .action-card-arrow { opacity: 1; color: var(--accent); }
         .printers-list { display: flex; flex-direction: column; gap: 7px; }
         .printer-row { display: flex; align-items: center; gap: 7px; }
         .btn-printer {
@@ -703,16 +705,34 @@
             <div class="receipt-footer">Thank you for your purchase! 🎉<br/>Powered by prim3-POS</div>
         </div>
         <div class="actions-side">
-            <div class="actions-title">🧾 Sale Complete!</div>
+            <div class="actions-title">🧾 Sale Overview</div>
             <div>
                 <div class="section-label">Actions</div>
-                <div class="top-actions">
-                    <button class="btn-complete-sale" onclick="completeSale()">✅ Complete Sale</button>
-                    <button class="btn-edit" onclick="editSale()">✏️ Edit</button>
-                </div>
-                <div class="top-actions" style="margin-top:7px;">
-                    <button class="btn-pdf" onclick="downloadPDF()">📄 Save PDF</button>
-                    <button class="btn-save-order" onclick="openSaveOrderLabel()">💾 Save Order</button>
+                <div class="action-cards">
+                    <button class="action-card action-card--primary" onclick="completeSale()">
+                        <span class="action-card-icon">✅</span>
+                        <div class="action-card-body">
+                            <div class="action-card-label">Complete Sale</div>
+                            <div class="action-card-sub">Finalize &amp; record transaction</div>
+                        </div>
+                        <span class="action-card-arrow">›</span>
+                    </button>
+                    <button class="action-card action-card--green" onclick="editSale()">
+                        <span class="action-card-icon">✏️</span>
+                        <div class="action-card-body">
+                            <div class="action-card-label">Edit Sale</div>
+                            <div class="action-card-sub">Go back &amp; modify items</div>
+                        </div>
+                        <span class="action-card-arrow">›</span>
+                    </button>
+                    <button class="action-card action-card--muted" onclick="openSaveOrderLabel()">
+                        <span class="action-card-icon">💾</span>
+                        <div class="action-card-body">
+                            <div class="action-card-label">Save Order</div>
+                            <div class="action-card-sub">Hold for later</div>
+                        </div>
+                        <span class="action-card-arrow">›</span>
+                    </button>
                 </div>
             </div>
             <div>
