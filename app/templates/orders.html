@@ -654,7 +654,8 @@
             payment_method:  order.payment_method || 'cash',
             cash_received:   0,
             change:          0,
-            kitchen_notes:   order.kitchen_notes || ''
+            kitchen_notes:   order.kitchen_notes || '',
+            order_type:      order.order_type      || 'dine_in'
         };
     }
 

@@ -372,6 +372,9 @@ def print_kitchen(data: dict, printer: str):
         order_notes = str(data.get("kitchen_notes") or "").strip()
 
         # ── Header ────────────────────────────────────────────────
+        order_type_raw   = str(data.get("order_type", "")).lower()
+        order_type_label = "[ DINE IN ]" if order_type_raw == "dine_in" else "[ TAKE OUT ]" if order_type_raw == "takeout" else order_type_raw.upper()
+
         t(ALIGN_CENTER)
         t(BOLD_ON + "*** KITCHEN ORDER ***" + BOLD_OFF + "\n")
         t("\n")
@@ -379,7 +382,14 @@ def print_kitchen(data: dict, printer: str):
         t(f"Cashier: {data.get('cashier', '')}\n")
         t(f"Order  : #{data.get('sale_id', 'N/A')}\n")
         t(f"Date   : {data.get('timestamp', '')}\n")
-        t(divider() + "\n")
+
+        # ── Option A: dedicated order-type block ──────────────────────
+        t(divider("=") + "\n")
+        t(ALIGN_CENTER)
+        if order_type_label:
+            t(ITEM_ON + order_type_label.center(W) + ITEM_OFF + "\n")
+        t(ALIGN_LEFT)
+        t(divider("=") + "\n")
 
         # ── Column Headers ────────────────────────────────────────
         t(BOLD_ON + "ITEM".center(COL_ITEM) + "QTY".center(COL_QTY) + "\n" + BOLD_OFF)

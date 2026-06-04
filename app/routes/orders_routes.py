@@ -87,16 +87,6 @@ def download_receipt():
             y -= 4.5 * mm
 
         # ── Header ───────────────────────────────────────────────
-        # Logo image — probe multiple candidate directories so the file is
-        # found regardless of whether the Flask app package is at the project
-        # root or inside a subfolder (e.g.  project/app/__init__.py).
-        #
-        # Search order:
-        #   1. current_app.static_folder          (Flask's configured static dir)
-        #   2. <root_path>/static                  (same package, explicit)
-        #   3. <root_path>/../static               (project root when app lives
-        #                                           inside a subfolder like app/)
-        #   4. <instance_path>/../static           (extra safety net)
         logo_path = None
         _static_dirs = [
             current_app.static_folder,
@@ -270,9 +260,6 @@ def checkout():
         deduct_for_sale(cart, current_user.id)
         log_action(current_user.id, "CHECKOUT", f"Sale #{sale.id} total P{total}")
 
-        # FIX: stamp the receipt in Philippine Standard Time (UTC+8), not bare
-        # server local time, so the printed time is always correct regardless
-        # of where the server is hosted.
         now = datetime.now(tz=_PH_TZ)
         return jsonify({
             "success":         True,
@@ -330,10 +317,33 @@ def void_sale():
 @login_required
 def saved_orders():
     orders = SavedOrder.query.order_by(SavedOrder.created_at.desc()).all()
-    return jsonify({
-        "success": True,
-        "orders":  [serialize_order(o) for o in orders],
-    })
+
+    # Build a cashier lookup so we don't query the DB per-row
+    cashier_ids = {o.cashier_id for o in orders if getattr(o, "cashier_id", None)}
+    cashier_map = {}
+    if cashier_ids:
+        users = User.query.filter(User.id.in_(cashier_ids)).all()
+        cashier_map = {u.id: u.name for u in users}
+
+    result = []
+    for o in orders:
+        s = serialize_order(o)
+        cid = getattr(o, "cashier_id", None)
+
+        # Always resolve the full display name from the DB lookup when
+        # cashier_id is present — this prevents serialize_order from
+        # leaking a username, PIN, or abbreviated code (e.g. "FCG") into
+        # both the cashier_name and cashier fields used by print templates.
+        if cid:
+            resolved_name = cashier_map.get(cid)
+            if resolved_name:
+                s["cashier_name"] = resolved_name
+                s["cashier"]      = resolved_name  # cover both field names
+            s["cashier_id"] = cid
+
+        result.append(s)
+
+    return jsonify({"success": True, "orders": result})
 
 
 # ── Save a new order from POS ─────────────────────────────────────
@@ -356,6 +366,7 @@ def save_order():
             payment_method=data.get("payment_method", "cash"),
             kitchen_notes=data.get("kitchen_notes", ""),
             order_type=data.get("order_type", "dine_in"),
+            cashier_id=current_user.id,
         )
         db.session.add(order)
         db.session.commit()
@@ -401,10 +412,11 @@ def complete_order():
     if not order:
         return jsonify({"success": False, "error": "Order not found"})
     order.is_completed = True
+    if not getattr(order, "cashier_id", None):
+        order.cashier_id = current_user.id
     db.session.commit()
     log_action(current_user.id, "COMPLETE_ORDER", f"Order #{order.id}")
     return jsonify({"success": True})
-
 
 
 # ── [TEST] Full-delete a completed order (SavedOrder + Sale + SaleItems) ──
@@ -423,24 +435,18 @@ def delete_order():
 
     deleted_sale_id = None
 
-    # ── Find and delete the linked Sale + SaleItems ────────────────────────
-    # Labels created by savePdfAndComplete() are "Sale #<id>", so we can
-    # extract the Sale.id directly and nuke both the parent and child rows.
     try:
         label = (order.label or "").strip()
         if label.lower().startswith("sale #"):
             sale_id = int(label.split("#", 1)[1].strip())
             sale    = db.session.get(Sale, sale_id)
             if sale:
-                # Delete child SaleItems first (guards against missing CASCADE)
                 SaleItem.query.filter_by(sale_id=sale.id).delete(synchronize_session=False)
                 db.session.delete(sale)
                 deleted_sale_id = sale.id
     except Exception:
-        # Non-standard label or Sale already absent — skip silently
         pass
 
-    # ── Delete the SavedOrder itself ─────────────────────────────────
     db.session.delete(order)
     db.session.commit()
 
@@ -455,6 +461,7 @@ def delete_order():
         "deleted_order_id": order.id,
         "deleted_sale_id":  deleted_sale_id,
     })
+
 
 # ── Void a saved order (requires PIN) ─────────────────────────────
 @orders_bp.route("/orders/void", methods=["POST"])
