@@ -1485,19 +1485,32 @@
             var icon = p.printer_type === 'kitchen' ? '🍳' : '🧾';
             var url  = p.printer_type === 'kitchen' ? '/print/print_kitchen' : '/print/print_receipt';
             return '<div class="printer-row">' +
-                '<button class="btn-printer" onclick="printTo(\'' + p.port.replace(/'/g, "\\'") + '\',\'' + url + '\',\'' + p.name.replace(/'/g, "\\'") + '\')">' +
+                '<button class="btn-printer" onclick="printTo(\'' + p.port.replace(/'/g, "\\'") + '\',\'' + url + '\',\'' + p.name.replace(/'/g, "\\'") + '\',\'' + p.printer_type + '\')">' +
                 icon + ' ' + escHtml(p.name) + '<span class="btn-printer-sub">' + escHtml(p.port) + '</span></button>' +
                 '<button class="btn-printer-delete" onclick="deletePrinter(' + p.id + ',\'' + p.name.replace(/'/g, "\\'") + '\')">✕</button></div>';
         }).join('');
     }
 
-    function printTo(port, url, name) {
+    function printTo(port, url, name, printerType) {
         if (!lastSaleData) return;
         var status = document.getElementById('printStatus');
         status.textContent = 'Sending to ' + name + '...'; status.className = 'print-status';
-        fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({}, lastSaleData, { port: port })) })
-        .then(function(r) { return r.json(); })
-        .then(function(data) { status.textContent = data.success ? name + ' printed!' : 'Failed: ' + data.error; status.className = 'print-status ' + (data.success ? 'success' : 'error'); });
+        var doPrint = function() {
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({}, lastSaleData, { port: port })) })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                status.textContent = data.success ? name + ' printed!' : 'Failed: ' + data.error;
+                status.className = 'print-status ' + (data.success ? 'success' : 'error');
+            });
+        };
+        if (printerType === 'receipt') {
+            fetch('/print/open_drawer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ port: port }) })
+            .then(function(r) { return r.json(); })
+            .then(function(drawerData) { if (!drawerData.success) { console.warn('Cash drawer: ' + drawerData.error); } doPrint(); })
+            .catch(function(err) { console.warn('Cash drawer error:', err); doPrint(); });
+        } else {
+            doPrint();
+        }
     }
 
     function deletePrinter(id, name) {

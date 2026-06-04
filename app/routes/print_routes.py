@@ -1,4 +1,5 @@
 import os
+import win32print
 from flask import Blueprint, request, jsonify, make_response, current_app
 from flask_login import login_required
 from database import db, SavedPrinter
@@ -14,6 +15,29 @@ print_bp = Blueprint("print", __name__)
 def print_receipt():
     data = request.get_json()
     return jsonify(print_receipt_service(data, data.get("port")))
+
+
+@print_bp.route("/open_drawer", methods=["POST"])
+@print_bp.route("/print/open_drawer", methods=["POST"])
+@login_required
+def open_drawer():
+    data = request.get_json()
+    port = data.get("port")
+    try:
+        # ESC/POS cash drawer pulse: ESC p 0 25 250
+        drawer_cmd = b"\x1b\x70\x00\x19\xfa"
+        hPrinter = win32print.OpenPrinter(port)
+        try:
+            win32print.StartDocPrinter(hPrinter, 1, ("Cash Drawer", None, "RAW"))
+            win32print.StartPagePrinter(hPrinter)
+            win32print.WritePrinter(hPrinter, drawer_cmd)
+            win32print.EndPagePrinter(hPrinter)
+            win32print.EndDocPrinter(hPrinter)
+        finally:
+            win32print.ClosePrinter(hPrinter)
+        return jsonify(success=True)
+    except Exception as e:
+        return jsonify(success=False, error=str(e))
 
 
 @print_bp.route("/print_kitchen", methods=["POST"])
