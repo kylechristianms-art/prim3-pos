@@ -241,6 +241,7 @@ def checkout():
             discount_amount=total_discount,
             final_total=total,
             payment_method=payment_method,
+            cashier_id=current_user.id,
         )
         db.session.add(sale)
         db.session.flush()          # get sale.id before SavedOrder references it

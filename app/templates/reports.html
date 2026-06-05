@@ -400,6 +400,10 @@
 
         /* ── Spacer ── */
         .mb16{margin-bottom:16px;}
+
+        /* ── Delete Transaction Button ── */
+        .btn-del-tx{padding:3px 9px;background:transparent;border:1px solid var(--red);border-radius:5px;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;}
+        .btn-del-tx:hover{background:var(--red);color:#fff;}
     </style>
 <base target="_blank">
 </head>
@@ -629,9 +633,10 @@
                         <th>Payment</th>
                         <th>Status</th>
                         <th>Date & Time</th>
+                        <th>Actions</th>
                     </tr></thead>
                     <tbody id="txTableBody">
-                        <tr><td colspan="9" class="loading-state">Click the Transactions tab to load…</td></tr>
+                        <tr><td colspan="10" class="loading-state">Click the Transactions tab to load…</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1238,7 +1243,7 @@ function loadTransactions(page) {
     var search  = (document.getElementById('txSearch').value || '').trim();
     var url = '/reports/transactions' + qs() + '&page=' + S.txPage + '&per_page=' + perPage;
 
-    document.getElementById('txTableBody').innerHTML = '<tr><td colspan="9" class="loading-state">Loading…</td></tr>';
+    document.getElementById('txTableBody').innerHTML = '<tr><td colspan="10" class="loading-state">Loading…</td></tr>';
 
     api(url).then(function(res) {
         if (!res.success) return;
@@ -1261,7 +1266,7 @@ function renderTransactionTable(data, search) {
         });
     }
 
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No transactions found.</td></tr>'; return; }
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty-state">No transactions found.</td></tr>'; return; }
 
     tbody.innerHTML = rows.map(function(r) {
         var payClass = 'badge-' + r.payment.toLowerCase().replace(/\s+/g, '');
@@ -1276,6 +1281,7 @@ function renderTransactionTable(data, search) {
             '<td><span class="badge ' + payClass + '">' + escHtml(r.payment).toUpperCase() + '</span></td>' +
             '<td>' + (r.is_void ? '<span class="badge badge-void">VOID</span>' : '<span class="badge badge-ok">OK</span>') + '</td>' +
             '<td style="font-size:11px;color:var(--text-muted);white-space:nowrap;">' + escHtml(r.timestamp) + '</td>' +
+            '<td><button class="btn-del-tx" onclick="deleteTransaction(' + r.id + ')">🗑 Delete</button></td>' +
             '</tr>';
     }).join('');
 }
@@ -1295,6 +1301,24 @@ function renderPagination(data) {
             (data.page >= data.pages ? 'disabled' : '') + '>Next ›</button>';
     html += '<span class="page-info">Page ' + data.page + ' of ' + data.pages + ' (' + fmtNum(data.total) + ' total)</span>';
     pg.innerHTML = html;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   DELETE TRANSACTION
+════════════════════════════════════════════════════════════════════ */
+function deleteTransaction(saleId) {
+    if (!confirm('Permanently delete Sale #' + saleId + '?\nThis cannot be undone and will update all totals.')) return;
+    fetch('/reports/transactions/' + saleId + '/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+        if (!res.success) { alert('Delete failed: ' + (res.error || 'Unknown error')); return; }
+        loadTransactions(S.txPage);
+        loadSummary();
+    })
+    .catch(function(err) { alert('Delete failed: ' + (err.message || 'Network error')); });
 }
 
 /* ════════════════════════════════════════════════════════════════════

@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request
-from flask_login import login_required
+from flask_login import login_required, current_user
 from datetime import date
+from database import db, Sale, SaleItem
+from app.services.audit_service import log_action
 from app.services.report_service import (
     _parse_date,
     get_summary, get_sales_over_time, get_top_products,
@@ -111,3 +113,23 @@ def inventory_status():
 @login_required
 def legacy_summary():
     return jsonify({"daily": daily_sales(), "top_products": top_products()})
+
+
+# ── Delete Transaction ────────────────────────────────────────────
+@reports_bp.route("/reports/transactions/<int:sale_id>/delete", methods=["POST"])
+@login_required
+def delete_transaction(sale_id):
+    if current_user.role not in ["admin", "manager"]:
+        return jsonify({"success": False, "error": "Access denied"})
+    sale = db.session.get(Sale, sale_id)
+    if not sale:
+        return jsonify({"success": False, "error": "Transaction not found"})
+    try:
+        SaleItem.query.filter_by(sale_id=sale.id).delete(synchronize_session=False)
+        db.session.delete(sale)
+        db.session.commit()
+        log_action(current_user.id, "DELETE_TRANSACTION", f"Deleted Sale #{sale_id}")
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)})
