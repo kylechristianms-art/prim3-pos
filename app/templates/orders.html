@@ -533,12 +533,43 @@
 
         /* Receipt line items */
         var receiptItems = o.cart.map(function(item) {
-            var lineTotal = (parseFloat(item.price) || 0) * (parseInt(item.qty) || 0)
-                          - (parseFloat(item.discount) || 0);
-            return '<div class="mini-receipt-item">'
-                + '<span>' + escHtml(item.name) + ' x' + item.qty + '</span>'
+            var price    = parseFloat(item.price) || 0;
+            var qty      = parseInt(item.qty) || 0;
+            var disc     = parseFloat(item.discount) || 0;
+            var addons   = item.addons || [];
+            var addonCost = addons.reduce(function(s, a) {
+                return s + (parseFloat(a.price) || 0) * (parseInt(a.qty) || 1);
+            }, 0) * qty;
+            var lineTotal = price * qty + addonCost - disc;
+
+            var html = '<div class="mini-receipt-item">'
+                + '<span>' + escHtml(item.name) + ' x' + qty + '</span>'
                 + '<span>₱' + lineTotal.toFixed(2) + '</span>'
                 + '</div>';
+
+            addons.forEach(function(a) {
+                var aQty   = parseInt(a.qty) || 1;
+                var aPrice = parseFloat(a.price) || 0;
+                html += '<div class="mini-receipt-row" style="padding-left:10px;font-size:9px;">'
+                    + '<span>+ ' + escHtml(a.name) + (aQty > 1 ? ' x' + aQty : '') + '</span>'
+                    + '<span>₱' + (aPrice * aQty * qty).toFixed(2) + '</span>'
+                    + '</div>';
+            });
+
+            if (disc > 0) {
+                html += '<div class="mini-receipt-row" style="padding-left:10px;font-size:9px;color:var(--orange);">'
+                    + '<span>' + escHtml(item.discount_type || 'Discount') + '</span>'
+                    + '<span>-₱' + disc.toFixed(2) + '</span>'
+                    + '</div>';
+            }
+
+            if (item.notes) {
+                html += '<div class="mini-receipt-row" style="padding-left:10px;font-size:9px;font-style:italic;color:var(--text-muted);">'
+                    + '<span>📝 ' + escHtml(item.notes) + '</span>'
+                    + '</div>';
+            }
+
+            return html;
         }).join('');
 
         /* Discount row (only when > 0) */
