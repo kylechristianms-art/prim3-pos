@@ -1,0 +1,5 @@
+ID,Label,Subtotal,Discount,Total,Payment,Type,Status,Created At,Void Reason,Void Resolution
+2,Sale #133,173.00,0.00,173.00,cash,takeout,COMPLETED,2026-06-04 04:06,,
+3,Sale #134,323.00,0.00,323.00,FoodPanda,takeout,COMPLETED,2026-06-04 04:07,,
+4,Sale #135,218.00,0.00,218.00,cash,takeout,COMPLETED,2026-06-04 07:31,,
+5,Sale #136,88.00,0.00,88.00,cash,takeout,COMPLETED,2026-06-04 09:43,,
