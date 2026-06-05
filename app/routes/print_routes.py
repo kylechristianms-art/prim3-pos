@@ -56,8 +56,11 @@ def download_receipt():
     import io
     data = request.get_json()
 
+    # FIX: fall back to "id" so a null/missing sale_id never prints as "#None"
+    sale_id = data.get("sale_id") or data.get("id", "N/A")
+
     lines = [
-        f"RECEIPT #{data.get('sale_id', 'N/A')}",
+        f"RECEIPT #{sale_id}",
         "=" * 36,
         f"Cashier : {data.get('cashier', 'Unknown')}",
         f"Date    : {data.get('timestamp', '')}",
@@ -99,7 +102,6 @@ def download_receipt():
 
     content  = "\n".join(lines)
     buf      = io.BytesIO(content.encode("utf-8"))
-    sale_id  = data.get("sale_id", "unknown")
 
     response = make_response(buf.getvalue())
     response.headers["Content-Type"]        = "text/plain; charset=utf-8"

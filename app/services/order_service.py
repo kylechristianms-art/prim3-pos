@@ -89,24 +89,38 @@ def serialize_order(order):
     except Exception:
         created_at_str = ""
 
-    # ── FIX: Cashier name — try cashier_id direct DB lookup FIRST so that a
-    # detached or unloaded ORM relationship can never suppress the fallback.
-    # The original code wrapped both the relationship check AND the elif branch
-    # inside one try/except, meaning any exception from order.cashier (e.g.
-    # DetachedInstanceError) would swallow the entire block and return "—"
-    # without ever attempting the direct lookup
     cashier_name = "—"
 
-    # Step 2: Fall back to ORM relationship if Step 1 didn't resolve
-    if cashier_name == "—":
-        try:
-            if order.cashier and order.cashier.name:
-                cashier_name = order.cashier.name
-        except Exception:
-            pass
+    try:
+        if order.cashier and order.cashier.name:
+            cashier_name = order.cashier.name
+    except Exception:
+        pass
+
+    # ── Resolve sale_id with three-priority fallback ──────────────────────────
+    # Priority 1: SavedOrder.sale_id FK column (assigned by checkout() when the
+    #             column exists on the model; guarded by try/except AttributeError).
+    sale_id = getattr(order, "sale_id", None)
+
+    # Priority 2: Parse from label "Sale #<n>".
+    #   checkout() always sets label = f"Sale #{sale.id}", so this extracts the
+    #   correct Sale PK even when the FK column hasn't been migrated yet.
+    if not sale_id:
+        _label = (getattr(order, "label", "") or "").strip()
+        if _label.lower().startswith("sale #"):
+            try:
+                sale_id = int(_label.split("#", 1)[1].strip())
+            except (ValueError, IndexError):
+                pass
+
+    # Priority 3: Final fallback — use SavedOrder.id so the field is never null.
+    #   Applies to orders saved without checkout (no Sale record exists).
+    if not sale_id:
+        sale_id = order.id
 
     return {
         "id":              order.id,
+        "sale_id":         sale_id,
         "label":           order.label or "",
         # Return enriched cart so per-item PWD discounts are present for PDF rendering
         "cart":            enriched_cart,
@@ -122,6 +136,6 @@ def serialize_order(order):
         "void_reason":     order.void_reason     or "",
         "void_resolution": order.void_resolution or "",
         "created_at":      created_at_str,
-        # Cashier name resolved via direct DB lookup first, then ORM relationship
+        # Cashier name resolved via ORM relationship
         "cashier_name":    cashier_name,
     }

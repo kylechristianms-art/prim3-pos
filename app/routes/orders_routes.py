@@ -120,7 +120,7 @@ def download_receipt():
         y -= 4 * mm
         c.drawCentredString(page_w / 2, y, timestamp)
         y -= 4 * mm
-        c.drawCentredString(page_w / 2, y, f"Order: {sale_id}")
+        c.drawCentredString(page_w / 2, y, f"Sales Invoice: {sale_id}")
         y -= 4 * mm
         c.drawCentredString(page_w / 2, y, f"Cashier: {cashier}")
         y -= 4 * mm
@@ -225,15 +225,17 @@ def checkout():
         if not cart:
             return jsonify({"success": False, "error": "Cart is empty"})
 
-        discount_amount = float(data.get("discount_amount", 0))
-        discount_type   = data.get("discount_type", "")
-        payment_method  = data.get("payment_method", "cash")
-        cash_received   = float(data.get("cash_received", 0))
+        editing_order_id = data.get("order_id")        # int if editing a SavedOrder, else None
+        discount_amount  = float(data.get("discount_amount", 0))
+        discount_type    = data.get("discount_type", "")
+        payment_method   = data.get("payment_method", "cash")
+        cash_received    = float(data.get("cash_received", 0))
 
         enriched_cart = calculate_cart_with_item_discounts(cart, discount_amount)
         subtotal, total_discount, total = calculate_total(enriched_cart, discount_amount)
         change = calculate_change(total, cash_received, payment_method)
 
+        # ── Create Sale record ────────────────────────────────────────
         sale = Sale(
             total=subtotal,
             discount_amount=total_discount,
@@ -241,7 +243,7 @@ def checkout():
             payment_method=payment_method,
         )
         db.session.add(sale)
-        db.session.flush()
+        db.session.flush()          # get sale.id before SavedOrder references it
 
         for item in enriched_cart:
             db.session.add(SaleItem(
@@ -255,15 +257,52 @@ def checkout():
             if product:
                 product.quantity = max(0, product.quantity - item["qty"])
 
+        # ── Create or update the linked SavedOrder (not yet completed) ─
+        order_id = None
+        if editing_order_id:
+            order = db.session.get(SavedOrder, editing_order_id)
+            if order and not order.is_completed and not order.is_void:
+                order.label           = f"Sale #{sale.id}"
+                order.cart_json       = json.dumps(normalize_cart(enriched_cart))
+                order.discount_amount = total_discount
+                order.payment_method  = payment_method
+                order.kitchen_notes   = data.get("kitchen_notes", order.kitchen_notes or "")
+                order.order_type      = data.get("order_type", order.order_type or "dine_in")
+                try:
+                    order.sale_id = sale.id
+                except AttributeError:
+                    pass
+                order_id = order.id
+        
+        if order_id is None:
+            # New sale — create a pending SavedOrder so kitchen prints have an ID
+            saved = SavedOrder(
+                label=f"Sale #{sale.id}",
+                cart_json=json.dumps(normalize_cart(enriched_cart)),
+                discount_amount=total_discount,
+                payment_method=payment_method,
+                kitchen_notes=data.get("kitchen_notes", ""),
+                order_type=data.get("order_type", "dine_in"),
+                cashier_id=current_user.id,
+            )
+            try:
+                saved.sale_id = sale.id
+            except AttributeError:
+                pass
+            db.session.add(saved)
+            db.session.flush()
+            order_id = saved.id
+
         db.session.commit()
 
         deduct_for_sale(cart, current_user.id)
-        log_action(current_user.id, "CHECKOUT", f"Sale #{sale.id} total P{total}")
+        log_action(current_user.id, "CHECKOUT", f"Sale #{sale.id} Order #{order_id} total P{total}")
 
         now = datetime.now(tz=_PH_TZ)
         return jsonify({
             "success":         True,
             "sale_id":         sale.id,
+            "order_id":        order_id,     # SavedOrder.id — used by completeSale() / confirmSaveOrder()
             "subtotal":        subtotal,
             "discount_amount": total_discount,
             "discount_type":   discount_type,
@@ -275,10 +314,45 @@ def checkout():
             "timestamp":       now.strftime("%b %d, %Y %I:%M %p"),
             "items":           enriched_cart,
             "kitchen_notes":   data.get("kitchen_notes", ""),
+            "order_type":      data.get("order_type", "dine_in"),
         })
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)})
+
+
+
+# ── Cancel a pending checkout (Edit Sale) ─────────────────────────
+@orders_bp.route("/orders/checkout/cancel", methods=["POST"])
+@login_required
+def cancel_checkout():
+    """
+    Voids a pending (not completed, not voided) Sale + SavedOrder so the
+    cashier can go back and edit the cart.  Inventory is NOT restored here;
+    void the order from the Orders page if a full reversal is needed.
+    """
+    data     = request.get_json() or {}
+    order_id = data.get("order_id")
+    sale_id  = data.get("sale_id")
+    try:
+        if order_id:
+            order = db.session.get(SavedOrder, order_id)
+            if order and not order.is_completed and not order.is_void:
+                db.session.delete(order)
+
+        if sale_id:
+            sale = db.session.get(Sale, sale_id)
+            if sale and not getattr(sale, "is_void", False):
+                SaleItem.query.filter_by(sale_id=sale.id).delete(synchronize_session=False)
+                db.session.delete(sale)
+
+        db.session.commit()
+        log_action(current_user.id, "CANCEL_CHECKOUT",
+                   f"Cancelled Sale #{sale_id} / Order #{order_id}")
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    return jsonify({"success": True})
 
 
 # ── Complete direct sale ───────────────────────────────────────────
@@ -394,6 +468,17 @@ def update_order():
         order.kitchen_notes   = data.get("kitchen_notes", order.kitchen_notes)
         order.order_type      = data.get("order_type", order.order_type)
 
+        # Preserve the real Sale FK when provided (e.g. from confirmSaveOrder after
+        # checkout renamed the label to the user's custom label).  Without this,
+        # serialize_order() Priority-1 would fall through to the label-parse or the
+        # order.id fallback once the label is no longer "Sale #<n>".
+        raw_sale_id = data.get("sale_id")
+        if raw_sale_id:
+            try:
+                order.sale_id = int(raw_sale_id)
+            except (AttributeError, ValueError, TypeError):
+                pass
+
         db.session.commit()
         log_action(current_user.id, "UPDATE_ORDER", f"Order #{order.id}")
         return jsonify({"success": True, "message": f"Order '{order.label}' updated!"})
@@ -434,31 +519,47 @@ def delete_order():
         return jsonify({"success": False, "error": "Only completed orders can be deleted this way"})
 
     deleted_sale_id = None
+    order_id_log    = order.id
+    order_label_log = order.label
 
     try:
+        # Resolve the linked Sale from the label before touching the session.
+        linked_sale = None
         label = (order.label or "").strip()
         if label.lower().startswith("sale #"):
-            sale_id = int(label.split("#", 1)[1].strip())
-            sale    = db.session.get(Sale, sale_id)
-            if sale:
-                SaleItem.query.filter_by(sale_id=sale.id).delete(synchronize_session=False)
-                db.session.delete(sale)
-                deleted_sale_id = sale.id
-    except Exception:
-        pass
+            try:
+                linked_sale = db.session.get(Sale, int(label.split("#", 1)[1].strip()))
+            except (ValueError, IndexError):
+                pass
 
-    db.session.delete(order)
-    db.session.commit()
+        # ── Delete SavedOrder FIRST and flush it out of the DB ──────────────
+        # SavedOrder.sale_id is a FK → Sale.id.  If we delete Sale first the
+        # DB rejects it (FK constraint).  Flushing the SavedOrder delete within
+        # the same transaction clears the reference before Sale is removed.
+        db.session.delete(order)
+        db.session.flush()
+
+        # ── Now safe to remove Sale and its line items ───────────────────────
+        if linked_sale:
+            SaleItem.query.filter_by(sale_id=linked_sale.id).delete(synchronize_session=False)
+            db.session.delete(linked_sale)
+            deleted_sale_id = linked_sale.id
+
+        db.session.commit()
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)})
 
     log_action(
         current_user.id,
         "DELETE_ORDER_TEST",
-        f"Full-delete completed order #{order.id} '{order.label}'"
+        f"Full-delete completed order #{order_id_log} '{order_label_log}'"
         + (f" + Sale #{deleted_sale_id} + SaleItems" if deleted_sale_id else ""),
     )
     return jsonify({
         "success":          True,
-        "deleted_order_id": order.id,
+        "deleted_order_id": order_id_log,
         "deleted_sale_id":  deleted_sale_id,
     })
 

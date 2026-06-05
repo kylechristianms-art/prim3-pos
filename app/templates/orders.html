@@ -600,7 +600,6 @@
             +       '<div class="mini-receipt-header">'
             +         '<img src="/static/logo.bmp" class="mini-receipt-logo-img"'
             +              ' onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">'
-            +         '<div class="mini-receipt-logo" style="display:none;">SUPREMACY INTL</div>'
             +         '<div class="mini-receipt-sub">Sales Invoice &middot; ' + o.created_at + '</div>'
             +       '</div>'
             +       '<hr class="mini-receipt-divider"/>'
@@ -641,7 +640,7 @@
         var netTotal = parseFloat(order.total)           || 0;
         var subtotal = parseFloat(order.subtotal)        || (netTotal + discAmt);
         return {
-            sale_id:         'ORD-' + order.id,
+            sale_id:         (order.sale_id != null ? order.sale_id : order.id),
             cashier:         order.cashier_name || '—',
             cashier_id:      order.cashier_id != null ? String(order.cashier_id) : '',
             timestamp:       order.created_at,
@@ -693,13 +692,14 @@
 
     function _downloadAndComplete(order, orderId, btn) {
         var payload = buildReceiptPayload(order);
+        var saleId  = payload.sale_id;
         fetch('/download_receipt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
             .then(function(r) {
                 if (!r.ok) { return r.json().then(function(e) { throw new Error(e.error || 'PDF failed (HTTP ' + r.status + ')'); }).catch(function() { throw new Error('PDF failed (HTTP ' + r.status + ')'); }); }
                 return r.blob();
             })
             .then(function(blob) {
-                triggerPdfDownload(blob, 'order_' + orderId + '.pdf');
+                triggerPdfDownload(blob, 'Sale_' + saleId + '.pdf');
                 return fetch('/saved_orders/complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: orderId }) });
             })
             .then(function(r) { return r.json(); })
@@ -713,12 +713,13 @@
         var order = getOrderFromCard(orderId);
         if (!order) { alert('Error: Could not read order data. Please refresh the page.'); btn.disabled = false; btn.textContent = '📄 Save PDF'; return; }
         var payload = buildReceiptPayload(order);
+        var saleId  = payload.sale_id;
         fetch('/download_receipt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
             .then(function(r) {
                 if (!r.ok) { return r.json().then(function(e) { throw new Error(e.error || 'PDF failed (HTTP ' + r.status + ')'); }).catch(function() { throw new Error('PDF failed (HTTP ' + r.status + ')'); }); }
                 return r.blob();
             })
-            .then(function(blob) { triggerPdfDownload(blob, 'order_' + orderId + '.pdf'); })
+            .then(function(blob) { triggerPdfDownload(blob, 'Sale_' + saleId + '.pdf'); })
             .catch(function(err) { alert('Error: ' + (err.message || 'Unknown error')); })
             .finally(function() { btn.disabled = false; btn.textContent = '📄 Save PDF'; });
     }
