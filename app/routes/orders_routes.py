@@ -273,6 +273,10 @@ def checkout():
                     order.sale_id = sale.id
                 except AttributeError:
                     pass
+                try:
+                    order.cash_received = cash_received
+                except AttributeError:
+                    pass
                 order_id = order.id
         
         if order_id is None:
@@ -288,6 +292,10 @@ def checkout():
             )
             try:
                 saved.sale_id = sale.id
+            except AttributeError:
+                pass
+            try:
+                saved.cash_received = cash_received
             except AttributeError:
                 pass
             db.session.add(saved)

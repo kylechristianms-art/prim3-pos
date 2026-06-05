@@ -118,6 +118,9 @@ def serialize_order(order):
     if not sale_id:
         sale_id = order.id
 
+    cash_received = round(float(getattr(order, "cash_received", 0) or 0), 2)
+    change = round(max(0.0, cash_received - total), 2) if (order.payment_method or "").lower() == "cash" else 0.0
+
     return {
         "id":              order.id,
         "sale_id":         sale_id,
@@ -128,6 +131,8 @@ def serialize_order(order):
         # Expose the FULL total discount (order-level + item flat discounts)
         "discount_amount": round(total_discount, 2),
         "total":           total,
+        "cash_received":   cash_received,
+        "change":          change,
         "is_void":         bool(order.is_void),
         "is_completed":    bool(order.is_completed),
         "order_type":      order.order_type      or "dine_in",

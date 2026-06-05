@@ -639,6 +639,10 @@
             +       discountRow
             +       '<div class="mini-receipt-total"><span>Total:</span><span>₱' + total.toFixed(2) + '</span></div>'
             +       '<div class="mini-receipt-row"><span>Payment</span><span>' + o.payment_method.toUpperCase() + '</span></div>'
+            +       (o.payment_method.toLowerCase() === 'cash' && parseFloat(o.cash_received) > 0
+                        ? '<div class="mini-receipt-row"><span>Cash Received</span><span>₱' + parseFloat(o.cash_received).toFixed(2) + '</span></div>'
+                          + '<div class="mini-receipt-row"><span>Change</span><span>₱' + parseFloat(o.change || 0).toFixed(2) + '</span></div>'
+                        : '')
             +       (o.kitchen_notes
                         ? '<div class="mini-receipt-row"><span>Notes</span><span style="font-style:italic;">' + escHtml(o.kitchen_notes) + '</span></div>'
                         : '')
@@ -682,8 +686,8 @@
             discount_amount: discAmt,
             total:           netTotal,
             payment_method:  order.payment_method || 'cash',
-            cash_received:   0,
-            change:          0,
+            cash_received:   parseFloat(order.cash_received) || 0,
+            change:          parseFloat(order.change)        || 0,
             kitchen_notes:   order.kitchen_notes || '',
             order_type:      order.order_type      || 'dine_in'
         };

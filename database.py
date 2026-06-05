@@ -131,6 +131,7 @@ class SavedOrder(db.Model):
     is_completed    = db.Column(db.Boolean, default=False)
     order_type      = db.Column(db.String(20), default="dine_in")
     payment_method  = db.Column(db.String(20), default="cash")
+    cash_received   = db.Column(db.Float, default=0.0, nullable=True)
     kitchen_notes   = db.Column(db.Text)
     void_reason     = db.Column(db.Text)
     void_resolution = db.Column(db.Text)
